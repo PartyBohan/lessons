@@ -208,6 +208,46 @@
   }
   .toggle-btn:hover:not(.on) { color: var(--ink-2); }
 
+  /* BGM toggle button — top-right */
+  .bgm-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    color: var(--ink-3);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 8px;
+    cursor: pointer;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.6);
+    transition: all var(--d-fast) var(--ease);
+    flex-shrink: 0;
+    position: relative;
+  }
+  .bgm-btn:hover { color: var(--ink-2); border-color: var(--ink-5); }
+  .bgm-btn.on {
+    background: linear-gradient(180deg, #79DD22, var(--green));
+    color: white;
+    border-color: var(--green-deep);
+    box-shadow: 0 0 0 2px rgba(88,204,2,0.18), inset 0 1px 0 rgba(255,255,255,0.4);
+  }
+  .bgm-btn.on::after {
+    content: "";
+    position: absolute;
+    top: -3px; right: -3px;
+    width: 8px; height: 8px;
+    background: var(--green);
+    border-radius: 50%;
+    border: 2px solid var(--surface);
+    animation: bgmPulse 2.4s ease-in-out infinite;
+  }
+  @keyframes bgmPulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50%      { transform: scale(1.4); opacity: 0.6; }
+  }
+
   /* ===========================================================
      3. MIDI status pill
      =========================================================== */
@@ -629,12 +669,12 @@
   }
 
   /* Keyboard — sized for full PartyKeys 36-key range (C3..B5).
-     21 white keys across; on mobile each key ~16-18px wide. */
+     21 white keys across; whites + blacks both absolute-positioned
+     within .keyboard-inner so % math is consistent and blacks
+     center exactly on the white-key boundary. */
   .keyboard {
-    display: flex;
-    justify-content: center;
-    margin: 18px auto 4px;
     position: relative;
+    margin: 18px auto 4px;
     height: 150px;
     max-width: 720px;
     background: linear-gradient(180deg, #1A1D24 0%, #0E1014 100%);
@@ -644,29 +684,37 @@
       inset 0 2px 6px rgba(0,0,0,0.5),
       var(--shadow-1);
   }
-  .key {
+  .keyboard-inner {
     position: relative;
-    flex: 1;
+    width: 100%;
     height: 100%;
-    background: linear-gradient(180deg, #FDFDFB 0%, #EFECE2 100%);
-    border-radius: 0 0 5px 5px;
-    margin: 0 1px;
+  }
+  .key {
+    position: absolute;
+    top: 0;
+    height: 100%;
     cursor: pointer;
     display: flex; align-items: flex-end; justify-content: center;
     padding-bottom: 8px;
     font-size: 9px; font-weight: 700;
+    transition: transform 60ms var(--ease), filter 60ms var(--ease);
+    font-family: var(--font-mono);
+    box-sizing: border-box;
+  }
+  .key.white {
+    background: linear-gradient(180deg, #FDFDFB 0%, #EFECE2 100%);
+    border-radius: 0 0 5px 5px;
     color: var(--ink-4);
+    border-left: 1px solid rgba(0,0,0,0.10);
+    border-right: 1px solid rgba(0,0,0,0.04);
     box-shadow:
       inset 0 -4px 0 rgba(0,0,0,0.18),
       inset 0 1px 0 rgba(255,255,255,0.7),
       0 2px 3px rgba(0,0,0,0.35);
-    transition: transform 60ms var(--ease), box-shadow 60ms var(--ease);
-    font-family: var(--font-mono);
   }
+  .key.white:first-of-type { border-left: none; }
   .key.black {
-    position: absolute;
     height: 64%;
-    top: 14px;
     background: linear-gradient(180deg, #2C3138 0%, #14181D 80%, #0A0D11 100%);
     color: rgba(255,255,255,.45);
     z-index: 2;
@@ -1209,6 +1257,13 @@
     <button class="toggle-btn" id="lang-zh">中</button>
     <button class="toggle-btn" id="lang-en">EN</button>
   </div>
+  <button class="bgm-btn" id="bgm-toggle" title="Background music" aria-label="Toggle background music">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M9 18V5l12-2v13"/>
+      <circle cx="6" cy="18" r="3"/>
+      <circle cx="18" cy="16" r="3"/>
+    </svg>
+  </button>
 </header>
 
 <!-- MIDI status pill -->
@@ -1314,6 +1369,7 @@ const DEFAULT_STATE = {
   starsByLesson: {},
   unlockedUpTo: "0.1",
   lang: "zh", tone: "kid",
+  bgm: false,
 };
 let state = loadState();
 
@@ -1562,6 +1618,119 @@ function dingCorrect() { playNote(72, 0.15, 0.08); setTimeout(() => playNote(76,
 function buzzWrong()   { playNote(53, 0.18, 0.06); setTimeout(() => playNote(50, 0.22, 0.06), 80); }
 
 /* ============================================================
+   4b) BACKGROUND MUSIC — soft procedural pad loop, ~0.04 master
+        4-chord progression I-vi-IV-V (C / Am / F / G), 8s per
+        chord = 32s loop. Triple-detuned sine pads + gentle
+        upper arpeggio. Quiet enough to live under lessons.
+   ============================================================ */
+let bgmGain = null;
+let bgmTimer = null;
+let bgmIsPlaying = false;
+const BGM_VOL = 0.04;             // master gain, very quiet
+const BGM_CHORD_LEN = 8.0;        // seconds per chord
+const BGM_PROG = [
+  // [pad notes (4-voice), arpeggio notes (one octave up)]
+  { pad: [48, 60, 64, 67], arp: [72, 76, 79, 76] },  // C major
+  { pad: [45, 57, 60, 64], arp: [69, 72, 76, 72] },  // A minor
+  { pad: [41, 53, 57, 60], arp: [65, 69, 72, 69] },  // F major
+  { pad: [43, 55, 59, 62], arp: [67, 71, 74, 71] },  // G major
+];
+
+function bgmPlayPad(notes, t0, dur) {
+  notes.forEach(n => {
+    const f = midiToFreq(n);
+    const env = audioCtx.createGain();
+    env.gain.value = 0;
+    env.gain.setValueAtTime(0, t0);
+    env.gain.linearRampToValueAtTime(0.18, t0 + 1.6);     // slow attack
+    env.gain.linearRampToValueAtTime(0.14, t0 + dur - 1.0);
+    env.gain.linearRampToValueAtTime(0, t0 + dur);        // slow release
+    env.connect(bgmGain);
+    // Triple-detuned sine for soft pad
+    [-7, 0, 7].forEach(detune => {
+      const osc = audioCtx.createOscillator();
+      osc.type = "sine";
+      osc.frequency.value = f;
+      osc.detune.value = detune;
+      osc.connect(env);
+      osc.start(t0);
+      osc.stop(t0 + dur + 0.1);
+    });
+  });
+}
+
+function bgmPlayArp(notes, t0, perNoteSec) {
+  notes.forEach((n, i) => {
+    const at = t0 + i * perNoteSec;
+    const f = midiToFreq(n);
+    const env = audioCtx.createGain();
+    env.gain.value = 0;
+    env.gain.setValueAtTime(0, at);
+    env.gain.linearRampToValueAtTime(0.06, at + 0.05);
+    env.gain.exponentialRampToValueAtTime(0.0001, at + perNoteSec * 0.95);
+    env.connect(bgmGain);
+    // single soft sine + 2nd harmonic for music-box feel
+    [1, 2].forEach(h => {
+      const o = audioCtx.createOscillator();
+      o.type = "sine";
+      o.frequency.value = f * h;
+      const g = audioCtx.createGain();
+      g.gain.value = 1 / (h * h * 1.5);
+      o.connect(g).connect(env);
+      o.start(at);
+      o.stop(at + perNoteSec + 0.05);
+    });
+  });
+}
+
+function bgmScheduleLoop() {
+  if (!bgmIsPlaying || !audioCtx) return;
+  const t0 = audioCtx.currentTime + 0.05;
+  BGM_PROG.forEach((chord, ci) => {
+    const ts = t0 + ci * BGM_CHORD_LEN;
+    bgmPlayPad(chord.pad, ts, BGM_CHORD_LEN);
+    bgmPlayArp(chord.arp, ts + BGM_CHORD_LEN * 0.25, BGM_CHORD_LEN * 0.18);
+  });
+  bgmTimer = setTimeout(bgmScheduleLoop, BGM_PROG.length * BGM_CHORD_LEN * 1000);
+}
+
+function startBgm() {
+  if (bgmIsPlaying) return;
+  ensureAudio();
+  if (!audioCtx) return;
+  bgmGain = audioCtx.createGain();
+  bgmGain.gain.value = 0;
+  bgmGain.gain.linearRampToValueAtTime(BGM_VOL, audioCtx.currentTime + 1.5); // gentle fade-in
+  bgmGain.connect(audioCtx.destination);
+  bgmIsPlaying = true;
+  bgmScheduleLoop();
+}
+
+function stopBgm() {
+  bgmIsPlaying = false;
+  if (bgmTimer) { clearTimeout(bgmTimer); bgmTimer = null; }
+  if (bgmGain && audioCtx) {
+    bgmGain.gain.cancelScheduledValues(audioCtx.currentTime);
+    bgmGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.8);
+    const g = bgmGain;
+    setTimeout(() => { try { g.disconnect(); } catch (e) {} }, 1100);
+  }
+  bgmGain = null;
+}
+
+function toggleBgm() {
+  state.bgm = !state.bgm;
+  saveState();
+  refreshBgmBtn();
+  if (state.bgm) startBgm(); else stopBgm();
+}
+
+function refreshBgmBtn() {
+  const btn = document.getElementById("bgm-toggle");
+  if (btn) btn.classList.toggle("on", !!state.bgm);
+}
+
+/* ============================================================
    5) ON-SCREEN KEYBOARD (PartyKeys 36 keys, MIDI 48-83)
    ============================================================ */
 const PK_LOW = 48, PK_HIGH = 83; // C3..B5 inclusive
@@ -1576,34 +1745,39 @@ function buildKeyboard(container, lowOpt, highOpt) {
   container.innerHTML = "";
   const kb = document.createElement("div");
   kb.className = "keyboard";
-  // First, count whites
+  const inner = document.createElement("div");
+  inner.className = "keyboard-inner";
+  kb.appendChild(inner);
+  // Collect whites
   const whites = [];
   for (let n = low; n <= high; n++) if (!isBlack(n)) whites.push(n);
-  const whiteWidth = 100 / whites.length;
-  // Build whites
+  const ww = 100 / whites.length;          // % per white key
+  // Build whites — absolute-positioned for exact alignment with blacks
   whites.forEach((n, idx) => {
     const k = document.createElement("div");
     k.className = "key white";
     k.dataset.note = n;
-    k.style.flex = "1";
+    k.style.left = (idx * ww) + "%";
+    k.style.width = ww + "%";
     const lab = document.createElement("span");
     lab.textContent = noteShort(n);
     k.appendChild(lab);
     k.addEventListener("pointerdown", () => virtualPress(n));
     k.addEventListener("pointerup", () => virtualRelease(n));
     k.addEventListener("pointerleave", () => virtualRelease(n));
-    kb.appendChild(k);
+    inner.appendChild(k);
   });
-  // Build blacks (overlay)
+  // Build blacks — perfectly centered on boundary between adjacent whites
   let whiteIdx = 0;
   for (let n = low; n <= high; n++) {
     if (isBlack(n)) {
       const k = document.createElement("div");
       k.className = "key black";
       k.dataset.note = n;
-      const leftPct = (whiteIdx) * whiteWidth - whiteWidth * 0.18;
-      k.style.left = leftPct + "%";
-      k.style.width = (whiteWidth * 0.62) + "%";
+      const bw = ww * 0.6;                 // black key width
+      // boundary between white[whiteIdx-1] and white[whiteIdx] is at (whiteIdx * ww)
+      k.style.left = (whiteIdx * ww - bw / 2) + "%";
+      k.style.width = bw + "%";
       k.addEventListener("pointerdown", (e) => { e.stopPropagation(); virtualPress(n); });
       k.addEventListener("pointerup", (e) => { e.stopPropagation(); virtualRelease(n); });
       k.addEventListener("pointerleave", () => virtualRelease(n));
@@ -2587,17 +2761,26 @@ function bindUI() {
   document.getElementById("gate-mascot").innerHTML = mingSvg("happy");
   const gm = document.getElementById("gate-mascot").querySelector("svg");
   if (gm) { gm.style.width = "140px"; gm.style.height = "140px"; }
+  const bgmBtn = document.getElementById("bgm-toggle");
+  if (bgmBtn) bgmBtn.onclick = toggleBgm;
 }
 
 function init() {
   bindUI();
   refreshToggles();
+  refreshBgmBtn();
   applyI18n();
   refreshTopbar();
   refreshPath();
   showMascot(toned({ kid: DICT.ming_intro_kid, adult: DICT.ming_intro_adult }), "happy", 4000);
   initMidi();
-  document.addEventListener("pointerdown", () => ensureAudio(), { once: true });
+  // Audio context can only start after a user gesture. On the first
+  // interaction, kick the audio context awake — and if BGM was on
+  // last session, resume it.
+  document.addEventListener("pointerdown", () => {
+    ensureAudio();
+    if (state.bgm && !bgmIsPlaying) startBgm();
+  }, { once: true });
 }
 init();
 </script>
