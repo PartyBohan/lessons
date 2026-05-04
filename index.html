@@ -27,6 +27,11 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
+
+<!-- 3D mascot: Google's <model-viewer> Web Component (loads three.js internally).
+     The avatar GLB lives at ./avatar.glb (266 KB, gltf-transform-optimized). -->
+<script type="module" src="https://cdn.jsdelivr.net/npm/@google/model-viewer@3.5.0/dist/model-viewer.min.js"></script>
+
 <style>
   /* ===========================================================
      1. DESIGN TOKENS — Duolingo green base, Apple Music depth,
@@ -1071,6 +1076,20 @@
     to   { opacity: 1; transform: translateY(0) scale(1); }
   }
   .mascot-svg { width: 88px; height: 88px; flex-shrink: 0; filter: drop-shadow(0 6px 12px rgba(20,22,28,0.18)); }
+  /* 3D mascot via model-viewer */
+  model-viewer.mascot-3d {
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    --poster-color: transparent;
+    --progress-bar-color: transparent;
+    --progress-bar-height: 0;
+    --progress-mask: transparent;
+  }
+  /* Containers that hold a model-viewer need explicit size */
+  #mascot-svg-slot { width: 88px; height: 88px; display: block; }
+  #mascot-result   { width: 180px; height: 180px; margin: 20px auto 8px; display: block; }
+  .gate-mascot     { width: 180px; height: 180px; margin: 0 auto 18px; display: block; }
   .speech-bubble {
     background: var(--surface);
     border: 1px solid var(--line);
@@ -1820,113 +1839,50 @@ function screenLight(n, role) {
 /* ============================================================
    6) MASCOT — Ming-Ming the parrot, redrawn premium
    ============================================================ */
+/* ---------------------------------------------------------------
+   Mascot — 3D character via <model-viewer>, loading ./avatar.glb
+   (glb is gltf-transform-optimized, ~260 KB). Different "moods" map
+   to different camera orbits + auto-rotate behavior so the same
+   model conveys happy / curious / sleepy / dancing without needing
+   baked animations. Function name kept as `mingSvg` so all existing
+   call sites work unchanged.
+   --------------------------------------------------------------- */
 function mingSvg(mood) {
-  // mood: happy | scratch | sleep | dance
-  // Cartoon parrot: rounded body, headphones, beak, blush.
-  // Eyes
-  const eye = mood === "sleep"
-    ? '<path d="M40 46 q5 -3 10 0" stroke="#1A1D24" stroke-width="2.5" fill="none" stroke-linecap="round"/><path d="M62 46 q5 -3 10 0" stroke="#1A1D24" stroke-width="2.5" fill="none" stroke-linecap="round"/>'
-    : `
-      <g>
-        <ellipse cx="44" cy="46" rx="5" ry="6" fill="white"/>
-        <ellipse cx="68" cy="46" rx="5" ry="6" fill="white"/>
-        <circle cx="${mood==="dance"?46:44}" cy="47" r="3" fill="#1A1D24"/>
-        <circle cx="${mood==="dance"?70:68}" cy="47" r="3" fill="#1A1D24"/>
-        <circle cx="${mood==="dance"?47:45}" cy="45.5" r="1" fill="white"/>
-        <circle cx="${mood==="dance"?71:69}" cy="45.5" r="1" fill="white"/>
-      </g>`;
-  // Cheeks (blush)
-  const cheek = (mood === "happy" || mood === "dance")
-    ? '<ellipse cx="32" cy="55" rx="6" ry="4" fill="#FFAEB6" opacity="0.7"/><ellipse cx="80" cy="55" rx="6" ry="4" fill="#FFAEB6" opacity="0.7"/>'
-    : '';
-  // Mouth/expression beneath beak
-  const mouth = mood === "scratch"
-    ? '<path d="M48 62 q8 -3 16 0" stroke="#1A1D24" stroke-width="2" fill="none" stroke-linecap="round"/>'
-    : mood === "dance"
-      ? '<path d="M46 60 q10 8 20 0" stroke="#1A1D24" stroke-width="2.5" fill="#FFD8A8" stroke-linecap="round"/>'
-      : '<path d="M48 60 q8 4 16 0" stroke="#1A1D24" stroke-width="2" fill="none" stroke-linecap="round"/>';
-
-  // Wings & arms
-  const wingL = mood === "dance"
-    ? '<path d="M22 60 Q4 48 10 30" stroke="#3F9700" stroke-width="7" fill="#58CC02" stroke-linecap="round"/>'
-    : '<path d="M20 62 Q12 78 22 84" stroke="#3F9700" stroke-width="3" fill="#58CC02" stroke-linecap="round"/>';
-  const wingR = mood === "scratch"
-    ? '<path d="M92 58 Q104 38 90 22" stroke="#3F9700" stroke-width="7" fill="#58CC02" stroke-linecap="round"/>'
-    : mood === "dance"
-      ? '<path d="M92 60 Q110 48 104 30" stroke="#3F9700" stroke-width="7" fill="#58CC02" stroke-linecap="round"/>'
-      : '<path d="M94 62 Q102 78 92 84" stroke="#3F9700" stroke-width="3" fill="#58CC02" stroke-linecap="round"/>';
-
-  // Tail feathers (3 quills, varying greens)
-  const tail = `
-    <path d="M50 92 Q42 102 38 110" stroke="#3F9700" stroke-width="6" fill="none" stroke-linecap="round"/>
-    <path d="M57 92 Q57 104 57 112" stroke="#4CAF00" stroke-width="6" fill="none" stroke-linecap="round"/>
-    <path d="M64 92 Q72 102 76 110" stroke="#3F9700" stroke-width="6" fill="none" stroke-linecap="round"/>`;
-
-  // Feet
-  const feet = mood === "dance"
-    ? '<path d="M48 92 l-3 6 m6 -6 l-1 8 m4 -8 l3 6" stroke="#FF9600" stroke-width="2.5" stroke-linecap="round"/>'
-    : '<path d="M48 92 l-2 6 l-3 0 m5 -6 l0 7 l-3 0 m9 -7 l3 0 l0 7 m-3 -7 l5 6 l3 0" stroke="#FF9600" stroke-width="2" stroke-linecap="round" fill="none"/>';
-
-  return `<svg viewBox="0 0 112 116" class="mascot-svg" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <radialGradient id="mingBody" cx="50%" cy="40%" r="60%">
-        <stop offset="0%" stop-color="#7FE12E"/>
-        <stop offset="60%" stop-color="#58CC02"/>
-        <stop offset="100%" stop-color="#3F9700"/>
-      </radialGradient>
-      <radialGradient id="mingHead" cx="50%" cy="40%" r="60%">
-        <stop offset="0%" stop-color="#85E534"/>
-        <stop offset="80%" stop-color="#58CC02"/>
-      </radialGradient>
-      <linearGradient id="mingBelly" x1="0" x2="0" y1="0" y2="1">
-        <stop offset="0%" stop-color="#D9F8AE"/>
-        <stop offset="100%" stop-color="#B8EE7A"/>
-      </linearGradient>
-      <linearGradient id="mingHP" x1="0" x2="0" y1="0" y2="1">
-        <stop offset="0%" stop-color="#C68BFF"/>
-        <stop offset="100%" stop-color="#823CC0"/>
-      </linearGradient>
-    </defs>
-
-    <!-- shadow -->
-    <ellipse cx="56" cy="111" rx="22" ry="3" fill="#1A1D24" opacity="0.12"/>
-
-    ${tail}
-
-    <!-- body -->
-    <ellipse cx="56" cy="74" rx="28" ry="22" fill="url(#mingBody)"/>
-    <!-- belly highlight -->
-    <ellipse cx="56" cy="78" rx="18" ry="14" fill="url(#mingBelly)"/>
-
-    ${feet}
-
-    ${wingL}${wingR}
-
-    <!-- head -->
-    <circle cx="56" cy="44" r="26" fill="url(#mingHead)"/>
-    <!-- soft highlight -->
-    <ellipse cx="46" cy="32" rx="8" ry="5" fill="white" opacity="0.25"/>
-
-    <!-- headphones band -->
-    <path d="M30 30 Q56 8 82 30" stroke="url(#mingHP)" stroke-width="5" fill="none" stroke-linecap="round"/>
-    <!-- headphone cups -->
-    <rect x="22" y="30" width="11" height="16" rx="4" fill="url(#mingHP)"/>
-    <rect x="79" y="30" width="11" height="16" rx="4" fill="url(#mingHP)"/>
-    <rect x="24" y="32" width="3" height="12" rx="1.5" fill="white" opacity="0.4"/>
-
-    <!-- beak (curved, lighter top, darker bottom) -->
-    <path d="M48 53 Q56 70 64 53 Q60 60 56 60 Q52 60 48 53Z" fill="#FF9600"/>
-    <path d="M48 53 Q56 64 64 53" stroke="#E07F00" stroke-width="1.5" fill="none"/>
-
-    ${eye}
-    ${cheek}
-    ${mouth}
-  </svg>`;
+  const moods = {
+    happy:   { orbit: "0deg 78deg 2.4m",   rotate: true,  speed: "18deg" },
+    scratch: { orbit: "35deg 80deg 2.5m",  rotate: false, speed: "0deg"  },
+    sleep:   { orbit: "0deg 95deg 2.6m",   rotate: false, speed: "0deg"  },
+    dance:   { orbit: "-20deg 70deg 2.2m", rotate: true,  speed: "65deg" },
+  };
+  const m = moods[mood] || moods.happy;
+  const rot = m.rotate ? `auto-rotate rotation-per-second="${m.speed}"` : "";
+  return `<model-viewer
+      class="mascot-svg mascot-3d mascot-${mood || 'happy'}"
+      src="./avatar.glb"
+      camera-orbit="${m.orbit}"
+      min-camera-orbit="auto auto 1.5m"
+      max-camera-orbit="auto auto 4m"
+      ${rot}
+      interaction-prompt="none"
+      disable-zoom
+      disable-pan
+      camera-controls
+      shadow-intensity="0.7"
+      shadow-softness="0.9"
+      exposure="1.05"
+      environment-image="neutral"
+      loading="eager"
+      reveal="auto"
+      style="background:transparent;--poster-color:transparent;"
+    ></model-viewer>`;
 }
 
 function showMascot(text, mood = "happy", dur = 3500) {
   const m = document.getElementById("mascot");
-  document.getElementById("mascot-svg-slot").outerHTML = mingSvg(mood).replace("class=\"mascot-svg\"", "class=\"mascot-svg\" id=\"mascot-svg-slot\"");
+  // Re-render the mascot slot with new mood. We always wrap in a
+  // container with id="mascot-svg-slot" so subsequent calls find it.
+  const slot = document.getElementById("mascot-svg-slot");
+  slot.innerHTML = mingSvg(mood);
   document.getElementById("mascot-bubble").textContent = text;
   m.classList.add("show");
   clearTimeout(showMascot._t);
@@ -2739,8 +2695,8 @@ function endLesson(win) {
       : (state.lang === "zh" ? "爱心耗尽，再试一次" : "Out of hearts — try again");
   }
   document.getElementById("mascot-result").innerHTML = mingSvg(stars >= 3 ? "dance" : (win ? "happy" : "scratch"));
-  const mr = document.getElementById("mascot-result").querySelector("svg");
-  if (mr) { mr.style.width = "140px"; mr.style.height = "140px"; }
+  const mr = document.getElementById("mascot-result").querySelector("model-viewer, svg");
+  if (mr) { mr.style.width = "180px"; mr.style.height = "180px"; }
   document.getElementById("result-continue").onclick = () => showView("view-home");
   showView("view-result");
 
@@ -2763,8 +2719,8 @@ function bindUI() {
   document.getElementById("gate-retry").onclick = () => initMidi();
   document.getElementById("gate-demo").onclick = () => { demoMode = true; setMidiPill("Demo mode", "warning"); showView("view-home"); };
   document.getElementById("gate-mascot").innerHTML = mingSvg("happy");
-  const gm = document.getElementById("gate-mascot").querySelector("svg");
-  if (gm) { gm.style.width = "140px"; gm.style.height = "140px"; }
+  const gm = document.getElementById("gate-mascot").querySelector("model-viewer, svg");
+  if (gm) { gm.style.width = "180px"; gm.style.height = "180px"; }
   const bgmBtn = document.getElementById("bgm-toggle");
   if (bgmBtn) bgmBtn.onclick = toggleBgm;
 }
