@@ -1,0 +1,2605 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>PartyKeys Lessons · 小琴课 · 音乐版多邻国</title>
+<meta name="description" content="PartyKeys 36 Keys MIDI 键盘配套乐理课。跟着 LED 灯走，5 分钟一课，从零基础到会弹三和弦。">
+<meta name="theme-color" content="#58CC02">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="小琴课">
+
+<!-- Open Graph / social -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="PartyKeys Lessons · 小琴课">
+<meta property="og:description" content="跟着 LED 灯走 · 5 分钟一课 · 音乐版多邻国">
+<meta property="og:url" content="https://lessons.partykeys.org/">
+<meta property="og:image" content="https://lessons.partykeys.org/favicon.svg">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:locale:alternate" content="en_US">
+<meta name="twitter:card" content="summary">
+
+<link rel="icon" type="image/svg+xml" href="./favicon.svg">
+<link rel="apple-touch-icon" href="./favicon.svg">
+<link rel="canonical" href="https://lessons.partykeys.org/">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  /* ===========================================================
+     1. DESIGN TOKENS — Duolingo green base, Apple Music depth,
+                        Linear restraint
+     =========================================================== */
+  :root {
+    /* Brand */
+    --green:        #58CC02;
+    --green-2:      #4CAF00;
+    --green-deep:   #3F9700;
+    --green-glow:   rgba(88,204,2,0.45);
+    --green-soft:   #EAFBD7;
+
+    --red:          #FF4B4B;
+    --red-deep:     #D63838;
+    --red-glow:     rgba(255,75,75,0.35);
+
+    --orange:       #FF9600;
+    --orange-deep:  #E07F00;
+    --orange-glow:  rgba(255,150,0,0.4);
+
+    --yellow:       #FFC800;
+    --yellow-deep:  #E0AE00;
+
+    --blue:         #1CB0F6;
+    --blue-deep:    #0E8FD0;
+
+    --purple:       #A560E8;
+    --purple-deep:  #823CC0;
+
+    --cyan:         #00CDB7;
+
+    /* Neutrals — warm, slightly creamy (not pure white) */
+    --bg:           #FBF9F2;
+    --bg-2:         #F4F1E8;
+    --surface:      #FFFFFF;
+    --surface-2:    #F8F6EE;
+
+    /* Ink — neutral with a hint of warmth */
+    --ink:          #1A1D24;
+    --ink-2:        #3C4148;
+    --ink-3:        #6B7280;
+    --ink-4:        #9CA3AF;
+    --ink-5:        #D6D3CA;
+
+    --line:         #ECE9DD;
+    --line-2:       #E2DED1;
+    --line-soft:    #F2EFE5;
+
+    /* Elevation — Apple Music–style soft layered shadows */
+    --shadow-1: 0 1px 2px rgba(20,22,28,.04), 0 2px 4px rgba(20,22,28,.04);
+    --shadow-2: 0 1px 2px rgba(20,22,28,.05), 0 4px 12px rgba(20,22,28,.06), 0 12px 32px rgba(20,22,28,.06);
+    --shadow-3: 0 2px 4px rgba(20,22,28,.06), 0 8px 24px rgba(20,22,28,.08), 0 20px 48px rgba(20,22,28,.10);
+    --shadow-press: 0 1px 2px rgba(20,22,28,.06);
+
+    /* Duolingo's signature "raised button" stack */
+    --raise-green:  inset 0 -4px 0 var(--green-deep);
+    --raise-red:    inset 0 -4px 0 var(--red-deep);
+    --raise-blue:   inset 0 -4px 0 var(--blue-deep);
+    --raise-purple: inset 0 -4px 0 var(--purple-deep);
+    --raise-orange: inset 0 -4px 0 var(--orange-deep);
+    --raise-yellow: inset 0 -4px 0 var(--yellow-deep);
+    --raise-mute:   inset 0 -4px 0 #D8D5C8;
+
+    /* Radii */
+    --r-xs: 8px;
+    --r-sm: 12px;
+    --r-md: 16px;
+    --r-lg: 20px;
+    --r-xl: 28px;
+    --r-pill: 999px;
+
+    /* Type */
+    --font-sans: "Plus Jakarta Sans", "PingFang SC", "HarmonyOS Sans SC", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --font-mono: "DM Mono", "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+    /* Motion */
+    --ease: cubic-bezier(.22,.61,.36,1);
+    --ease-spring: cubic-bezier(.34,1.56,.64,1);
+    --d-fast: 140ms;
+    --d-base: 220ms;
+    --d-slow: 360ms;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: var(--font-sans);
+    background:
+      radial-gradient(1200px 600px at 50% -100px, #EAFBD7 0%, transparent 60%),
+      radial-gradient(900px 700px at 100% 100%, #FFF6DB 0%, transparent 55%),
+      var(--bg);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    overflow-x: hidden;
+    user-select: none;
+    letter-spacing: -0.01em;
+  }
+  button {
+    font-family: inherit;
+    cursor: pointer;
+    border: none;
+    background: none;
+    color: inherit;
+    letter-spacing: inherit;
+  }
+  svg { display: block; }
+
+  /* ===========================================================
+     2. TOP BAR — glass + tight stats row
+     =========================================================== */
+  #topbar {
+    position: sticky; top: 0; z-index: 50;
+    height: 64px;
+    padding: 0 18px;
+    display: flex; align-items: center; gap: 18px;
+    background: rgba(251,249,242,0.78);
+    backdrop-filter: saturate(180%) blur(18px);
+    -webkit-backdrop-filter: saturate(180%) blur(18px);
+    border-bottom: 1px solid var(--line);
+  }
+  .stat {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-weight: 700;
+    font-size: 14px;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
+    transition: transform var(--d-base) var(--ease-spring);
+  }
+  .stat-icon { width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; }
+  .stat.hearts { color: var(--red); }
+  .stat.streak { color: var(--orange); }
+  .stat.xp     { color: var(--green-deep); }
+  .stat.level  {
+    color: var(--purple);
+    background: linear-gradient(135deg, #A560E8 0%, #6B40C0 100%);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+    padding: 0 8px;
+    border-radius: var(--r-pill);
+    font-weight: 800;
+  }
+  .stat.level::before {
+    content: "";
+    display: inline-block;
+    width: 14px; height: 14px;
+    margin-right: 5px;
+    background: linear-gradient(135deg, #A560E8, #6B40C0);
+    -webkit-mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2l2.6 5.6 6.1.7-4.6 4.2 1.3 6L12 15.6 6.6 18.5l1.3-6L3.3 8.3l6.1-.7L12 2z" fill="black"/></svg>') no-repeat center / contain;
+            mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2l2.6 5.6 6.1.7-4.6 4.2 1.3 6L12 15.6 6.6 18.5l1.3-6L3.3 8.3l6.1-.7L12 2z" fill="black"/></svg>') no-repeat center / contain;
+    vertical-align: -2px;
+  }
+
+  .top-spacer { flex: 1; }
+
+  .toggle-group {
+    display: inline-flex;
+    padding: 3px;
+    background: var(--surface-2);
+    border-radius: var(--r-pill);
+    border: 1px solid var(--line);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.6);
+  }
+  .toggle-btn {
+    padding: 5px 12px;
+    border-radius: var(--r-pill);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--ink-3);
+    transition: all var(--d-fast) var(--ease);
+    line-height: 1;
+    min-width: 32px;
+  }
+  .toggle-btn.on {
+    background: var(--surface);
+    color: var(--ink);
+    box-shadow: var(--shadow-1);
+  }
+  .toggle-btn:hover:not(.on) { color: var(--ink-2); }
+
+  /* ===========================================================
+     3. MIDI status pill
+     =========================================================== */
+  #midi-pill {
+    position: fixed; top: 78px; right: 18px; z-index: 40;
+    padding: 7px 12px 7px 10px;
+    border-radius: var(--r-pill);
+    font-size: 12px; font-weight: 700;
+    background: rgba(255,255,255,0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--line);
+    color: var(--ink-2);
+    display: inline-flex; align-items: center; gap: 7px;
+    box-shadow: var(--shadow-1);
+    transition: all var(--d-base) var(--ease);
+  }
+  #midi-pill .led {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--ink-4);
+    box-shadow: 0 0 0 0 currentColor;
+    animation: ledPulse 2s infinite;
+  }
+  #midi-pill.connected { color: var(--green-deep); border-color: rgba(88,204,2,0.4); background: rgba(234,251,215,0.85); }
+  #midi-pill.connected .led { background: var(--green); box-shadow: 0 0 0 4px rgba(88,204,2,0.18); }
+  #midi-pill.warning   { color: var(--orange-deep); border-color: rgba(255,150,0,0.35); background: rgba(255,243,219,0.85); }
+  #midi-pill.warning .led { background: var(--orange); }
+  #midi-pill.error     { color: var(--red-deep); border-color: rgba(255,75,75,0.3); background: rgba(255,232,232,0.85); }
+  #midi-pill.error .led { background: var(--red); }
+  @keyframes ledPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.55; }
+  }
+
+  /* ===========================================================
+     4. VIEWS
+     =========================================================== */
+  .view { display: none; min-height: calc(100vh - 64px); padding: 20px 16px 100px; }
+  .view.active { display: block; }
+  #view-lesson.active { display: flex; flex-direction: column; }
+
+  /* ===========================================================
+     5. HOME / PATH MAP
+     =========================================================== */
+  #view-home { max-width: 540px; margin: 0 auto; }
+  .home-header {
+    text-align: center;
+    padding: 16px 0 8px;
+  }
+  .home-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--ink-3);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    background: var(--surface);
+    padding: 5px 12px;
+    border-radius: var(--r-pill);
+    border: 1px solid var(--line);
+    box-shadow: var(--shadow-1);
+    margin-bottom: 14px;
+  }
+  .home-eyebrow::before {
+    content: "";
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 0 3px rgba(88,204,2,0.2);
+  }
+  .home-title {
+    font-size: 28px; font-weight: 800;
+    color: var(--ink);
+    letter-spacing: -0.025em;
+    line-height: 1.1;
+  }
+  .home-sub {
+    font-size: 14px; color: var(--ink-3);
+    margin-top: 8px;
+    font-weight: 500;
+  }
+
+  /* ----- Module banner ----- */
+  .module-block { margin: 36px 0 8px; }
+  .module-banner {
+    color: white;
+    border-radius: var(--r-lg);
+    padding: 18px 20px;
+    font-weight: 800;
+    font-size: 17px;
+    letter-spacing: -0.02em;
+    display: flex; align-items: center; justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+    box-shadow: var(--shadow-2);
+  }
+  .module-banner::before {
+    content: "";
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(circle at 90% -20%, rgba(255,255,255,0.32) 0%, transparent 50%),
+      radial-gradient(circle at 0% 120%, rgba(0,0,0,0.18) 0%, transparent 55%);
+    pointer-events: none;
+  }
+  .module-banner > * { position: relative; z-index: 1; }
+  .module-banner.onboarding { background: linear-gradient(135deg, #6CDB14 0%, #4CAF00 60%, #3F9700 100%); }
+  .module-banner.melody     { background: linear-gradient(135deg, #4FC8FF 0%, #1CB0F6 60%, #0E8FD0 100%); }
+  .module-banner.chord      { background: linear-gradient(135deg, #C68BFF 0%, #A560E8 60%, #7733C5 100%); }
+  .module-banner.rhythm     { background: linear-gradient(135deg, #FFB347 0%, #FF9600 60%, #E07F00 100%); }
+  .module-banner-left {
+    display: flex; align-items: center; gap: 12px;
+  }
+  .module-banner-icon {
+    width: 36px; height: 36px;
+    display: grid; place-items: center;
+    background: rgba(255,255,255,0.18);
+    border-radius: var(--r-sm);
+    backdrop-filter: blur(8px);
+  }
+  .module-banner-meta {
+    font-size: 12px;
+    opacity: 0.92;
+    font-weight: 600;
+    font-family: var(--font-mono);
+    letter-spacing: 0.04em;
+    background: rgba(0,0,0,0.18);
+    padding: 5px 10px;
+    border-radius: var(--r-pill);
+  }
+
+  /* ----- Path with real SVG connector ----- */
+  .path {
+    position: relative;
+    padding: 28px 0 16px;
+  }
+  .path-svg {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 1;
+  }
+  .path-svg .track-bg {
+    fill: none;
+    stroke: var(--line-2);
+    stroke-width: 6;
+    stroke-linecap: round;
+    stroke-dasharray: 2 12;
+  }
+  .path-svg .track-fill {
+    fill: none;
+    stroke: url(#trackGrad);
+    stroke-width: 6;
+    stroke-linecap: round;
+    transition: stroke-dasharray 600ms var(--ease);
+  }
+
+  .node-row {
+    position: relative; z-index: 2;
+    display: flex;
+    padding: 24px 0;
+  }
+  .node-row > .node-slot { flex: 1; display: flex; }
+  .node-row > .node-slot.center { justify-content: center; }
+  .node-row > .node-slot.left   { justify-content: flex-start; padding-left: 14%; }
+  .node-row > .node-slot.right  { justify-content: flex-end; padding-right: 14%; }
+
+  .lesson-node {
+    position: relative;
+    width: 84px; height: 84px;
+    border-radius: 50%;
+    background: var(--surface-2);
+    color: var(--ink-4);
+    display: grid; place-items: center;
+    box-shadow:
+      var(--raise-mute),
+      0 8px 18px rgba(20,22,28,0.06);
+    transition:
+      transform var(--d-base) var(--ease-spring),
+      box-shadow var(--d-base) var(--ease);
+    cursor: not-allowed;
+  }
+  .lesson-node svg {
+    width: 36px; height: 36px;
+    transition: transform var(--d-base) var(--ease-spring);
+  }
+  .lesson-node.unlocked,
+  .lesson-node.completed {
+    background: linear-gradient(180deg, #6FDB10 0%, var(--green) 100%);
+    color: white;
+    box-shadow:
+      var(--raise-green),
+      0 8px 22px rgba(88,204,2,0.32);
+    cursor: pointer;
+  }
+  .lesson-node.completed { background: linear-gradient(180deg, #6FDB10 0%, var(--green-2) 100%); }
+  .lesson-node.unlocked:hover,
+  .lesson-node.completed:hover { transform: translateY(-2px); }
+  .lesson-node.unlocked:active,
+  .lesson-node.completed:active {
+    transform: translateY(2px);
+    box-shadow:
+      inset 0 -2px 0 var(--green-deep),
+      0 4px 10px rgba(88,204,2,0.25);
+  }
+  .lesson-node.current {
+    background: linear-gradient(180deg, #FFFFFF 0%, #FAFFF0 100%);
+    color: var(--green-deep);
+    box-shadow:
+      inset 0 0 0 4px var(--green),
+      var(--raise-green),
+      0 8px 22px rgba(88,204,2,0.35),
+      0 0 0 0 rgba(88,204,2,0.4);
+    animation: currentPulse 2.4s ease-in-out infinite;
+    cursor: pointer;
+  }
+  .lesson-node.boss {
+    background: linear-gradient(180deg, #FFE057 0%, var(--yellow) 100%);
+    color: #6B4A00;
+    box-shadow:
+      var(--raise-yellow),
+      0 8px 22px rgba(255,200,0,0.42);
+  }
+  .lesson-node.boss.current {
+    background: linear-gradient(180deg, #FFFAE3 0%, #FFF6D2 100%);
+    color: var(--yellow-deep);
+    box-shadow:
+      inset 0 0 0 4px var(--yellow),
+      var(--raise-yellow),
+      0 8px 22px rgba(255,200,0,0.45);
+  }
+  @keyframes currentPulse {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-5px); }
+  }
+
+  .lesson-node .ring {
+    position: absolute; inset: -8px;
+    border-radius: 50%;
+    border: 2px solid var(--green);
+    opacity: 0;
+    pointer-events: none;
+  }
+  .lesson-node.current .ring {
+    animation: ringExpand 2.4s ease-out infinite;
+  }
+  @keyframes ringExpand {
+    0%   { opacity: 0.55; transform: scale(0.85); }
+    80%  { opacity: 0;    transform: scale(1.25); }
+    100% { opacity: 0;    transform: scale(1.25); }
+  }
+
+  .lesson-stars {
+    position: absolute;
+    bottom: -10px; left: 50%; transform: translateX(-50%);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-pill);
+    padding: 2px 8px;
+    font-size: 10px; font-weight: 700;
+    color: var(--yellow-deep);
+    white-space: nowrap;
+    box-shadow: var(--shadow-1);
+    letter-spacing: 1px;
+  }
+  .lesson-label {
+    position: absolute;
+    top: -34px; left: 50%; transform: translateX(-50%);
+    font-size: 12px; font-weight: 700;
+    background: var(--surface);
+    padding: 5px 11px;
+    border-radius: var(--r-pill);
+    color: var(--ink);
+    box-shadow: var(--shadow-1);
+    border: 1px solid var(--line);
+    white-space: nowrap;
+    letter-spacing: -0.01em;
+  }
+  .lesson-label::after {
+    content: "";
+    position: absolute;
+    bottom: -5px; left: 50%;
+    transform: translateX(-50%) rotate(45deg);
+    width: 7px; height: 7px;
+    background: var(--surface);
+    border-right: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+  }
+
+  /* ===========================================================
+     6. LESSON VIEW
+     =========================================================== */
+  #view-lesson {
+    max-width: 620px; margin: 0 auto;
+    width: 100%;
+    padding-top: 12px;
+  }
+
+  .lesson-progress {
+    display: flex; align-items: center; gap: 14px;
+    padding: 8px 0 22px;
+  }
+  .lesson-quit {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: var(--surface);
+    color: var(--ink-3);
+    font-size: 18px; font-weight: 700;
+    display: grid; place-items: center;
+    border: 1px solid var(--line);
+    box-shadow: var(--shadow-1);
+    transition: all var(--d-fast) var(--ease);
+  }
+  .lesson-quit:hover { color: var(--ink); transform: scale(1.05); }
+  .progress-bar {
+    flex: 1; height: 14px;
+    background: var(--surface-2);
+    border-radius: var(--r-pill);
+    overflow: hidden;
+    border: 1px solid var(--line);
+    position: relative;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(180deg, #79DD22 0%, var(--green) 50%, var(--green-2) 100%);
+    border-radius: var(--r-pill);
+    transition: width 480ms var(--ease);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.45),
+      inset 0 -2px 0 var(--green-deep);
+    position: relative;
+    overflow: hidden;
+  }
+  .progress-fill::after {
+    content: "";
+    position: absolute;
+    top: 2px; left: 6px; right: 12px;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent);
+    border-radius: var(--r-pill);
+  }
+
+  .question-card {
+    background: var(--surface);
+    border-radius: var(--r-xl);
+    padding: 28px 24px;
+    box-shadow: var(--shadow-2);
+    border: 1px solid var(--line);
+    margin-bottom: 18px;
+    position: relative;
+    overflow: hidden;
+  }
+  .question-card::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.9), transparent);
+  }
+  .q-prompt {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--ink-3);
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    margin-bottom: 10px;
+  }
+  .q-title {
+    font-size: 24px; font-weight: 800;
+    color: var(--ink);
+    margin-bottom: 22px;
+    letter-spacing: -0.025em;
+    line-height: 1.2;
+  }
+
+  /* Target pills (for T8) */
+  .target-pills {
+    display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
+    margin: 4px 0 22px;
+    padding: 14px;
+    background: var(--surface-2);
+    border-radius: var(--r-md);
+    border: 1px solid var(--line);
+  }
+  .target-pill {
+    background: var(--surface);
+    padding: 10px 16px;
+    border-radius: var(--r-sm);
+    font-weight: 800;
+    font-size: 17px;
+    color: var(--ink);
+    min-width: 44px;
+    text-align: center;
+    border: 1px solid var(--line);
+    box-shadow: var(--shadow-1);
+    transition: all var(--d-base) var(--ease-spring);
+    font-family: var(--font-mono);
+    letter-spacing: 0;
+  }
+  .target-pill.done {
+    background: linear-gradient(180deg, #6FDB10, var(--green));
+    color: white;
+    border-color: transparent;
+    box-shadow: var(--raise-green), 0 4px 10px rgba(88,204,2,0.25);
+  }
+  .target-pill.now {
+    background: var(--surface);
+    border: 2px solid var(--green);
+    color: var(--green-deep);
+    transform: translateY(-2px) scale(1.06);
+    box-shadow: 0 0 0 4px rgba(88,204,2,0.18), var(--shadow-2);
+    animation: pillPulse 1.2s ease-in-out infinite;
+  }
+  @keyframes pillPulse {
+    0%, 100% { box-shadow: 0 0 0 4px rgba(88,204,2,0.18), var(--shadow-2); }
+    50%      { box-shadow: 0 0 0 8px rgba(88,204,2,0.08), var(--shadow-2); }
+  }
+
+  /* Keyboard — sized for full PartyKeys 36-key range (C3..B5).
+     21 white keys across; on mobile each key ~16-18px wide. */
+  .keyboard {
+    display: flex;
+    justify-content: center;
+    margin: 18px auto 4px;
+    position: relative;
+    height: 150px;
+    max-width: 720px;
+    background: linear-gradient(180deg, #1A1D24 0%, #0E1014 100%);
+    padding: 14px 10px 10px;
+    border-radius: var(--r-md);
+    box-shadow:
+      inset 0 2px 6px rgba(0,0,0,0.5),
+      var(--shadow-1);
+  }
+  .key {
+    position: relative;
+    flex: 1;
+    height: 100%;
+    background: linear-gradient(180deg, #FDFDFB 0%, #EFECE2 100%);
+    border-radius: 0 0 5px 5px;
+    margin: 0 1px;
+    cursor: pointer;
+    display: flex; align-items: flex-end; justify-content: center;
+    padding-bottom: 8px;
+    font-size: 9px; font-weight: 700;
+    color: var(--ink-4);
+    box-shadow:
+      inset 0 -4px 0 rgba(0,0,0,0.18),
+      inset 0 1px 0 rgba(255,255,255,0.7),
+      0 2px 3px rgba(0,0,0,0.35);
+    transition: transform 60ms var(--ease), box-shadow 60ms var(--ease);
+    font-family: var(--font-mono);
+  }
+  .key.black {
+    position: absolute;
+    height: 64%;
+    top: 14px;
+    background: linear-gradient(180deg, #2C3138 0%, #14181D 80%, #0A0D11 100%);
+    color: rgba(255,255,255,.45);
+    z-index: 2;
+    border-radius: 0 0 4px 4px;
+    box-shadow:
+      inset 0 -3px 0 rgba(0,0,0,0.6),
+      inset 0 1px 0 rgba(255,255,255,0.1),
+      0 3px 5px rgba(0,0,0,0.45);
+    padding-bottom: 7px;
+  }
+  .key:active, .key.pressed {
+    transform: translateY(2px);
+    box-shadow:
+      inset 0 -2px 0 rgba(0,0,0,0.18),
+      0 1px 2px rgba(0,0,0,0.3);
+  }
+  /* ----------------------------------------------------------
+     Lit-key colors — color values match actual PartyKeys LED
+     protocol (hex from CLAUDE.md). The bright top-stop simulates
+     the LED's emissive brightness so key looks "lit" on screen.
+     LED protocol colors:
+       0x01 red    #7f0000   0x07 green  #0e7f1f
+       0x03 orange #7f1500   0x08 cyan   #137f60
+       0x05 yellow #7f5500   0x09 blue   #08307f
+       0x0C purple #4b007f
+     ---------------------------------------------------------- */
+  .key.lit-red     { background: linear-gradient(180deg, #ff5050 0%, #b30000 50%, #7f0000 100%) !important; color: white !important; box-shadow: inset 0 -3px 0 #5a0000, inset 0 2px 8px rgba(255,140,140,0.9), 0 0 18px 2px rgba(127,0,0,0.85); }
+  .key.lit-orange  { background: linear-gradient(180deg, #ff7030 0%, #c63500 50%, #7f1500 100%) !important; color: white !important; box-shadow: inset 0 -3px 0 #5a0c00, inset 0 2px 8px rgba(255,170,120,0.85), 0 0 18px 2px rgba(127,21,0,0.8); }
+  .key.lit-yellow  { background: linear-gradient(180deg, #ffc850 0%, #c08000 50%, #7f5500 100%) !important; color: #2a1c00 !important; box-shadow: inset 0 -3px 0 #5a3c00, inset 0 2px 8px rgba(255,220,140,0.9), 0 0 18px 2px rgba(127,85,0,0.8); }
+  .key.lit-green   { background: linear-gradient(180deg, #4be066 0%, #1aa835 50%, #0e7f1f 100%) !important; color: white !important; box-shadow: inset 0 -3px 0 #064c12, inset 0 2px 8px rgba(140,255,170,0.9), 0 0 18px 2px rgba(14,127,31,0.85); }
+  .key.lit-cyan    { background: linear-gradient(180deg, #50e0bd 0%, #20a785 50%, #137f60 100%) !important; color: white !important; box-shadow: inset 0 -3px 0 #084c39, inset 0 2px 8px rgba(140,240,220,0.85), 0 0 18px 2px rgba(19,127,96,0.8); }
+  .key.lit-blue    { background: linear-gradient(180deg, #4080ff 0%, #1850c0 50%, #08307f 100%) !important; color: white !important; box-shadow: inset 0 -3px 0 #03194c, inset 0 2px 8px rgba(150,180,255,0.9), 0 0 18px 2px rgba(8,48,127,0.85); }
+  .key.lit-purple  { background: linear-gradient(180deg, #b070ff 0%, #7728c0 50%, #4b007f 100%) !important; color: white !important; box-shadow: inset 0 -3px 0 #2c004c, inset 0 2px 8px rgba(210,160,255,0.9), 0 0 18px 2px rgba(75,0,127,0.85); }
+  /* black-key variants: same color, deeper top so black-key context holds */
+  .key.black.lit-red     { background: linear-gradient(180deg, #b30000 0%, #7f0000 60%, #4a0000 100%) !important; }
+  .key.black.lit-orange  { background: linear-gradient(180deg, #c63500 0%, #7f1500 60%, #4a0a00 100%) !important; }
+  .key.black.lit-yellow  { background: linear-gradient(180deg, #c08000 0%, #7f5500 60%, #4a3200 100%) !important; color: white !important; }
+  .key.black.lit-green   { background: linear-gradient(180deg, #1aa835 0%, #0e7f1f 60%, #064a12 100%) !important; }
+  .key.black.lit-cyan    { background: linear-gradient(180deg, #20a785 0%, #137f60 60%, #094a39 100%) !important; }
+  .key.black.lit-blue    { background: linear-gradient(180deg, #1850c0 0%, #08307f 60%, #03194a 100%) !important; }
+  .key.black.lit-purple  { background: linear-gradient(180deg, #7728c0 0%, #4b007f 60%, #2c004a 100%) !important; }
+
+  /* Choice grid */
+  .choice-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+    margin: 8px 0 4px;
+  }
+  .choice-btn {
+    background: var(--surface);
+    border: 1.5px solid var(--line-2);
+    border-radius: var(--r-md);
+    padding: 18px 14px;
+    font-size: 18px; font-weight: 800;
+    color: var(--ink);
+    text-align: center;
+    box-shadow: var(--raise-mute), var(--shadow-1);
+    transition: all var(--d-fast) var(--ease);
+    font-family: var(--font-mono);
+    letter-spacing: 0;
+  }
+  .choice-btn:hover {
+    border-color: var(--blue);
+    color: var(--blue-deep);
+    background: linear-gradient(180deg, #FFFFFF, #F4FBFF);
+    transform: translateY(-1px);
+  }
+  .choice-btn:active { transform: translateY(2px); box-shadow: inset 0 -2px 0 #D8D5C8; }
+  .choice-btn.correct {
+    background: linear-gradient(180deg, #6FDB10, var(--green));
+    color: white;
+    border-color: transparent;
+    box-shadow: var(--raise-green), 0 4px 14px rgba(88,204,2,0.3);
+  }
+  .choice-btn.wrong {
+    background: linear-gradient(180deg, #FF7575, var(--red));
+    color: white;
+    border-color: transparent;
+    box-shadow: var(--raise-red), 0 4px 14px rgba(255,75,75,0.3);
+    animation: shake 360ms var(--ease);
+  }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-6px); }
+    40%, 80% { transform: translateX(6px); }
+  }
+
+  /* Replay button */
+  .replay-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin: 6px auto 18px;
+    background: linear-gradient(180deg, #4FC8FF, var(--blue));
+    color: white;
+    padding: 11px 22px;
+    border-radius: var(--r-pill);
+    font-size: 14px; font-weight: 700;
+    box-shadow: var(--raise-blue), 0 4px 12px rgba(28,176,246,0.28);
+    transition: all var(--d-fast) var(--ease);
+    letter-spacing: -0.01em;
+  }
+  .replay-btn::before {
+    content: "";
+    width: 14px; height: 14px;
+    background: white;
+    -webkit-mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 11a9 9 0 0 1 15-6.7L21 2v7h-7l2.7-2.7A6 6 0 0 0 5 12H3z M21 13a9 9 0 0 1-15 6.7L3 22v-7h7l-2.7 2.7A6 6 0 0 0 19 12h2z" fill="black"/></svg>') no-repeat center / contain;
+            mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 11a9 9 0 0 1 15-6.7L21 2v7h-7l2.7-2.7A6 6 0 0 0 5 12H3z M21 13a9 9 0 0 1-15 6.7L3 22v-7h7l-2.7 2.7A6 6 0 0 0 19 12h2z" fill="black"/></svg>') no-repeat center / contain;
+  }
+  .replay-btn:active { transform: translateY(2px); box-shadow: inset 0 -2px 0 var(--blue-deep), 0 2px 6px rgba(28,176,246,0.2); }
+
+  /* Inline replay container */
+  .replay-wrap { text-align: center; }
+
+  /* CTA bottom bar */
+  .cta-bar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: var(--surface);
+    border-top: 1px solid var(--line);
+    padding: 18px 16px 24px;
+    display: none;
+    z-index: 30;
+    backdrop-filter: blur(20px);
+    box-shadow: 0 -8px 24px rgba(20,22,28,0.06);
+  }
+  .cta-bar.show { display: block; animation: ctaSlide 320ms var(--ease-spring); }
+  @keyframes ctaSlide {
+    from { transform: translateY(100%); }
+    to   { transform: translateY(0); }
+  }
+  .cta-bar.win  {
+    background: linear-gradient(180deg, #F4FFE8 0%, #EAFBD7 100%);
+    border-top-color: rgba(88,204,2,0.4);
+  }
+  .cta-bar.lose {
+    background: linear-gradient(180deg, #FFF2F2 0%, #FFE5E5 100%);
+    border-top-color: rgba(255,75,75,0.4);
+  }
+  .cta-feedback {
+    max-width: 620px; margin: 0 auto 12px;
+    font-weight: 800;
+    font-size: 18px;
+    letter-spacing: -0.02em;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .cta-feedback::before {
+    content: "";
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    display: inline-grid; place-items: center;
+    flex-shrink: 0;
+  }
+  .cta-feedback.win  { color: var(--green-deep); }
+  .cta-feedback.win::before {
+    background: var(--green);
+    -webkit-mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="black"/><path d="M7 12l3.5 3.5L17 9" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>') no-repeat center / contain;
+            mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="black"/><path d="M7 12l3.5 3.5L17 9" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>') no-repeat center / contain;
+  }
+  .cta-feedback.lose { color: var(--red-deep); }
+  .cta-feedback.lose::before {
+    background: var(--red);
+    -webkit-mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="black"/><path d="M8 8l8 8M16 8l-8 8" stroke="white" stroke-width="2.5" stroke-linecap="round"/></svg>') no-repeat center / contain;
+            mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="black"/><path d="M8 8l8 8M16 8l-8 8" stroke="white" stroke-width="2.5" stroke-linecap="round"/></svg>') no-repeat center / contain;
+  }
+
+  .cta-btn {
+    display: block;
+    max-width: 620px; margin: 0 auto;
+    background: linear-gradient(180deg, #6FDB10, var(--green) 60%, var(--green-2));
+    color: white;
+    padding: 16px;
+    border-radius: var(--r-md);
+    font-size: 16px; font-weight: 800;
+    text-align: center;
+    box-shadow:
+      var(--raise-green),
+      0 6px 16px rgba(88,204,2,0.32);
+    width: 100%;
+    letter-spacing: -0.01em;
+    transition: all var(--d-fast) var(--ease);
+    text-transform: uppercase;
+    font-size: 15px;
+    letter-spacing: 0.04em;
+  }
+  .cta-btn:hover { filter: brightness(1.04); }
+  .cta-btn:active {
+    transform: translateY(2px);
+    box-shadow: inset 0 -2px 0 var(--green-deep), 0 2px 6px rgba(88,204,2,0.2);
+  }
+  .cta-btn.lose {
+    background: linear-gradient(180deg, #FF7575, var(--red) 60%, var(--red-deep));
+    box-shadow: var(--raise-red), 0 6px 16px rgba(255,75,75,0.32);
+  }
+  .cta-btn.lose:active { box-shadow: inset 0 -2px 0 var(--red-deep), 0 2px 6px rgba(255,75,75,0.2); }
+
+  /* ===========================================================
+     7. RESULT VIEW — celebration animation
+     =========================================================== */
+  #view-result {
+    max-width: 520px; margin: 0 auto;
+    text-align: center;
+    position: relative;
+  }
+  #view-result.active {
+    animation: resultEnter 480ms var(--ease-spring);
+  }
+  @keyframes resultEnter {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  #mascot-result {
+    margin: 24px auto 8px;
+    width: 140px; height: 140px;
+    position: relative;
+  }
+  #mascot-result::before {
+    content: "";
+    position: absolute;
+    inset: -20px;
+    background:
+      radial-gradient(circle, rgba(255,200,0,0.35) 0%, transparent 60%);
+    border-radius: 50%;
+    animation: glowPulse 2.4s ease-in-out infinite;
+    z-index: -1;
+  }
+  @keyframes glowPulse {
+    0%, 100% { transform: scale(1); opacity: 0.7; }
+    50%      { transform: scale(1.08); opacity: 1; }
+  }
+  .result-header {
+    font-size: 32px; font-weight: 800;
+    margin: 18px 0 6px;
+    color: var(--green-deep);
+    letter-spacing: -0.03em;
+  }
+  .result-subhead {
+    font-size: 14px;
+    color: var(--ink-3);
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+  .stars-display {
+    display: flex; justify-content: center; gap: 14px;
+    margin: 26px 0;
+  }
+  .star {
+    width: 64px; height: 64px;
+    background: var(--surface-2);
+    border-radius: 50%;
+    display: grid; place-items: center;
+    color: var(--ink-5);
+    transition: all 480ms var(--ease-spring);
+    box-shadow: var(--raise-mute), var(--shadow-1);
+    border: 1px solid var(--line);
+    position: relative;
+  }
+  .star svg { width: 32px; height: 32px; }
+  .star.on {
+    background: linear-gradient(180deg, #FFE057, var(--yellow) 60%, var(--yellow-deep));
+    color: white;
+    transform: scale(1.18) rotate(-4deg);
+    box-shadow:
+      inset 0 -3px 0 #B08800,
+      0 8px 22px rgba(255,200,0,0.5),
+      0 0 0 0 rgba(255,200,0,0.4);
+    border-color: transparent;
+    animation: starPop 600ms var(--ease-spring);
+  }
+  .star.on:nth-child(2) { animation-delay: 220ms; }
+  .star.on:nth-child(3) { animation-delay: 440ms; }
+  @keyframes starPop {
+    0%   { transform: scale(0.4) rotate(-30deg); opacity: 0; }
+    60%  { transform: scale(1.3) rotate(8deg); opacity: 1; }
+    100% { transform: scale(1.18) rotate(-4deg); }
+  }
+
+  .reward-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+    margin: 24px 0;
+  }
+  .reward-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    padding: 18px 14px;
+    text-align: center;
+    box-shadow: var(--shadow-2);
+    position: relative;
+    overflow: hidden;
+  }
+  .reward-card::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 3px;
+    background: var(--green);
+  }
+  .reward-card.streak::before { background: var(--orange); }
+  .reward-card .lbl {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--ink-3);
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    margin-bottom: 6px;
+  }
+  .reward-card .val {
+    font-size: 28px; font-weight: 800;
+    letter-spacing: -0.025em;
+    font-variant-numeric: tabular-nums;
+  }
+  .reward-card.xp .val     { color: var(--green-deep); }
+  .reward-card.streak .val { color: var(--orange-deep); }
+
+  /* Confetti container */
+  #confetti-canvas {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 70;
+  }
+  .confetti-piece {
+    position: absolute;
+    top: -10px;
+    width: 10px; height: 14px;
+    border-radius: 2px;
+    opacity: 0;
+  }
+
+  /* Continue button on result page */
+  #result-continue {
+    margin-top: 8px;
+  }
+
+  /* ===========================================================
+     8. MASCOT
+     =========================================================== */
+  #mascot {
+    position: fixed;
+    bottom: 100px; left: 16px;
+    z-index: 60;
+    display: none;
+    align-items: flex-end;
+    gap: 12px;
+    pointer-events: none;
+    max-width: 320px;
+  }
+  #mascot.show {
+    display: flex;
+    animation: mascotEnter 380ms var(--ease-spring);
+  }
+  @keyframes mascotEnter {
+    from { opacity: 0; transform: translateY(12px) scale(0.92); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .mascot-svg { width: 88px; height: 88px; flex-shrink: 0; filter: drop-shadow(0 6px 12px rgba(20,22,28,0.18)); }
+  .speech-bubble {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md) var(--r-md) var(--r-md) 4px;
+    padding: 12px 14px;
+    max-width: 240px;
+    font-size: 13px; font-weight: 600;
+    color: var(--ink);
+    position: relative;
+    box-shadow: var(--shadow-2);
+    line-height: 1.4;
+    margin-bottom: 8px;
+  }
+  .speech-bubble::before {
+    content: "";
+    position: absolute;
+    left: -8px; bottom: 0px;
+    width: 14px; height: 14px;
+    background: var(--surface);
+    border-left: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    transform: skewY(-30deg);
+    border-radius: 0 0 0 4px;
+  }
+
+  /* ===========================================================
+     9. GATE / NO-MIDI VIEW
+     =========================================================== */
+  #view-gate {
+    max-width: 440px; margin: 40px auto 0;
+    text-align: center; padding: 0 16px 80px;
+  }
+  .gate-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-xl);
+    padding: 36px 26px 30px;
+    box-shadow: var(--shadow-3);
+    margin-top: 24px;
+  }
+  .gate-mascot {
+    width: 140px; height: 140px;
+    margin: 0 auto 18px;
+    filter: drop-shadow(0 8px 18px rgba(20,22,28,0.15));
+  }
+  .gate-title {
+    font-size: 24px; font-weight: 800;
+    margin-bottom: 10px;
+    letter-spacing: -0.025em;
+  }
+  .gate-sub {
+    font-size: 14px; color: var(--ink-3);
+    margin-bottom: 24px; line-height: 1.6;
+    font-weight: 500;
+  }
+  .gate-btn {
+    background: linear-gradient(180deg, #6FDB10, var(--green) 60%, var(--green-2));
+    color: white;
+    padding: 14px 24px;
+    border-radius: var(--r-md);
+    font-size: 14px; font-weight: 800;
+    box-shadow: var(--raise-green), 0 4px 12px rgba(88,204,2,0.28);
+    margin: 6px;
+    display: inline-block;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    transition: all var(--d-fast) var(--ease);
+  }
+  .gate-btn.secondary {
+    background: var(--surface);
+    color: var(--ink-2);
+    border: 1px solid var(--line-2);
+    box-shadow: var(--raise-mute), var(--shadow-1);
+  }
+  .gate-btn:active { transform: translateY(2px); box-shadow: inset 0 -2px 0 var(--green-deep); }
+  .gate-btn.secondary:active { box-shadow: inset 0 -2px 0 #D8D5C8; }
+
+  /* ===========================================================
+     10. UTILITY
+     =========================================================== */
+  .center { text-align: center; }
+  .small { font-size: 12px; color: var(--ink-3); }
+
+  @media (max-width: 380px) {
+    .home-title { font-size: 24px; }
+    .lesson-node { width: 76px; height: 76px; }
+    .lesson-node svg { width: 32px; height: 32px; }
+    .keyboard { height: 130px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===========================================================
+     SVG SPRITE — vector music notes & icons
+     =========================================================== -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <!-- Eighth note (single flag) -->
+    <symbol id="ico-note" viewBox="0 0 32 32">
+      <path d="M22 4.5v15.2a5.5 5.5 0 1 1-2.6-4.6V8.6L12 10.5v13.7a5.5 5.5 0 1 1-2.6-4.6V8L22 4.5z" fill="currentColor"/>
+    </symbol>
+    <!-- Beamed eighths (two notes) -->
+    <symbol id="ico-beam" viewBox="0 0 32 32">
+      <path d="M5 22.5a4 4 0 1 0 4 4V11.5l14-3.5v14.5a4 4 0 1 0 2.6-3.7V4L5 8v14.5z" fill="currentColor"/>
+    </symbol>
+    <!-- Sixteenth (double flag) -->
+    <symbol id="ico-sixteenth" viewBox="0 0 32 32">
+      <path d="M11 4l13-3v17.5a4.5 4.5 0 1 1-2.5-4V8.5l-8 1.8v13.4a4.5 4.5 0 1 1-2.5-4V4z" fill="currentColor"/>
+      <path d="M13.5 8.4l8-1.8c2.5 1 3.6 3.6 2.5 5.6l-8 1.8c1-2 0-4.6-2.5-5.6z" fill="currentColor" opacity=".75"/>
+    </symbol>
+    <!-- Treble clef -->
+    <symbol id="ico-clef" viewBox="0 0 32 32">
+      <path d="M16 2c-3.5 1-5 3.5-5 6.5 0 2.5 1 4.5 3 6.5l1.5 1.5-1 1c-3 3-4.5 5.5-4.5 9 0 4 3 7 7 7 1.5 0 2.7-.4 3.6-1l.4 1c.5 1.4-.3 2.5-1.5 2.5-1 0-2-.5-2-1.5h-2c0 2 1.8 3.5 4 3.5s3.8-1.5 3.5-4l-.5-1.5c2-1.4 3-3.5 3-6 0-3.5-2.5-6-6-6-.7 0-1.5.1-2 .3l-1.5-2.5c2-1.5 3-3.6 3-6 0-3-2-6-3-6zm0 3c.6 0 1 1 1 3s-.5 3.6-2 5l-.5-1c-.5-1.5-.5-2.5-.5-4 0-2 .8-3 2-3zm-1 14.5l1.5 2.5c-2.4.7-4 2.5-4 4.5 0 1.5 1 2.5 2 2.5v-2c-.5 0-.7-.4-.7-1 0-1 1-2 2.5-2.3l2 3.3c-.5.4-1 .5-1.8.5-2.5 0-4-1.5-4-4 0-1.7 1-3.5 2.5-4zm4 4c2.3 0 3.5 1.5 3.5 3.6 0 1.5-.5 2.7-1.6 3.5l-2-3.3c.6-.2 1.1-.6 1.1-1.3 0-.6-.4-1-1-1z" fill="currentColor"/>
+    </symbol>
+    <!-- Crown for boss -->
+    <symbol id="ico-crown" viewBox="0 0 32 32">
+      <path d="M3 11l5 4 8-9 8 9 5-4-2 14H5L3 11z" fill="currentColor"/>
+      <circle cx="3" cy="11" r="2" fill="currentColor"/>
+      <circle cx="29" cy="11" r="2" fill="currentColor"/>
+      <circle cx="16" cy="6" r="2" fill="currentColor"/>
+      <rect x="6" y="22" width="20" height="3" rx="1" fill="currentColor" opacity=".4"/>
+    </symbol>
+    <!-- Lock -->
+    <symbol id="ico-lock" viewBox="0 0 32 32">
+      <rect x="6" y="14" width="20" height="14" rx="3" fill="currentColor"/>
+      <path d="M10 14V9a6 6 0 0 1 12 0v5" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <circle cx="16" cy="20" r="2" fill="white" opacity=".7"/>
+    </symbol>
+    <!-- Check (completed) -->
+    <symbol id="ico-check" viewBox="0 0 32 32">
+      <path d="M7 16l6 6L25 10" stroke="currentColor" stroke-width="4.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+    <!-- Star (filled) -->
+    <symbol id="ico-star" viewBox="0 0 32 32">
+      <path d="M16 3l4 9.5 10 1-7.5 6.7L24.5 30 16 24.7 7.5 30l2-9.8L2 13.5l10-1L16 3z" fill="currentColor"/>
+    </symbol>
+    <!-- Heart -->
+    <symbol id="ico-heart" viewBox="0 0 32 32">
+      <path d="M16 27S4 19.5 4 11.5C4 7 7.5 4 11 4c2.5 0 4 1.5 5 3 1-1.5 2.5-3 5-3 3.5 0 7 3 7 7.5C28 19.5 16 27 16 27z" fill="currentColor"/>
+    </symbol>
+    <!-- Flame -->
+    <symbol id="ico-flame" viewBox="0 0 32 32">
+      <path d="M16 2c0 7-8 8-8 16a8 8 0 0 0 16 0c0-4-3-5-3-9 0-3-2.5-5-5-7zM12 22a4 4 0 0 0 8 0c0-2-1.5-3-1.5-5 0-1-1-2-2.5-3-2 1.5-4 3-4 8z" fill="currentColor"/>
+    </symbol>
+    <!-- Spark / XP -->
+    <symbol id="ico-spark" viewBox="0 0 32 32">
+      <path d="M16 2l3 10 10 4-10 4-3 10-3-10-10-4 10-4 3-10z" fill="currentColor"/>
+    </symbol>
+    <!-- Headphones -->
+    <symbol id="ico-headphones" viewBox="0 0 32 32">
+      <path d="M5 17v6a3 3 0 0 0 3 3h2v-12H8a3 3 0 0 0-3 3z" fill="currentColor"/>
+      <path d="M27 17v6a3 3 0 0 1-3 3h-2v-12h2a3 3 0 0 1 3 3z" fill="currentColor"/>
+      <path d="M6 17a10 10 0 0 1 20 0" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    </symbol>
+  </defs>
+</svg>
+
+<!-- ===========================================================
+     TOP BAR
+     =========================================================== -->
+<header id="topbar">
+  <div class="stat hearts" title="hearts">
+    <span class="stat-icon"><svg width="18" height="18"><use href="#ico-heart"/></svg></span>
+    <span id="stat-hearts">3</span>
+  </div>
+  <div class="stat streak" title="streak">
+    <span class="stat-icon"><svg width="18" height="18"><use href="#ico-flame"/></svg></span>
+    <span id="stat-streak">0</span>
+  </div>
+  <div class="stat xp" title="xp">
+    <span class="stat-icon"><svg width="18" height="18"><use href="#ico-spark"/></svg></span>
+    <span id="stat-xp">0</span>
+  </div>
+  <div class="stat level" title="level">
+    Lv<span id="stat-level">1</span>
+  </div>
+  <div class="top-spacer"></div>
+  <div class="toggle-group">
+    <button class="toggle-btn" id="tone-kid"  title="kid mode">Kid</button>
+    <button class="toggle-btn" id="tone-adult" title="adult mode">Pro</button>
+  </div>
+  <div class="toggle-group">
+    <button class="toggle-btn" id="lang-zh">中</button>
+    <button class="toggle-btn" id="lang-en">EN</button>
+  </div>
+</header>
+
+<!-- MIDI status pill -->
+<div id="midi-pill"><span class="led"></span><span id="midi-text">检测中…</span></div>
+
+<!-- ===========================================================
+     HOME / PATH MAP
+     =========================================================== -->
+<section id="view-home" class="view active">
+  <div class="home-header">
+    <span class="home-eyebrow">PartyKeys · Lessons</span>
+    <div class="home-title" data-i18n="home_title">PartyKeys 小琴课</div>
+    <div class="home-sub"  data-i18n="home_sub">跟着灯走 · 5 分钟一课</div>
+  </div>
+  <div id="path-container"></div>
+</section>
+
+<!-- ===========================================================
+     LESSON VIEW
+     =========================================================== -->
+<section id="view-lesson" class="view">
+  <div class="lesson-progress">
+    <button class="lesson-quit" id="btn-quit" title="quit">×</button>
+    <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+    <div class="stat hearts" style="font-size:13px">
+      <span class="stat-icon" style="width:16px;height:16px"><svg width="16" height="16"><use href="#ico-heart"/></svg></span>
+      <span id="lesson-hearts">3</span>
+    </div>
+  </div>
+  <div id="question-slot"></div>
+</section>
+
+<!-- ===========================================================
+     RESULT VIEW
+     =========================================================== -->
+<section id="view-result" class="view">
+  <div id="mascot-result"></div>
+  <div class="result-header" data-i18n="result_great">太棒了！</div>
+  <div class="result-subhead" id="result-sub"></div>
+  <div class="stars-display">
+    <div class="star" id="star-1"><svg><use href="#ico-star"/></svg></div>
+    <div class="star" id="star-2"><svg><use href="#ico-star"/></svg></div>
+    <div class="star" id="star-3"><svg><use href="#ico-star"/></svg></div>
+  </div>
+  <div class="reward-grid">
+    <div class="reward-card xp">
+      <div class="lbl">XP earned</div>
+      <div class="val">+<span id="result-xp">0</span></div>
+    </div>
+    <div class="reward-card streak">
+      <div class="lbl" data-i18n="streak">连击</div>
+      <div class="val" id="result-streak">0</div>
+    </div>
+  </div>
+  <button class="cta-btn" id="result-continue" data-i18n="continue">继续</button>
+</section>
+
+<!-- ===========================================================
+     GATE / NO-MIDI VIEW
+     =========================================================== -->
+<section id="view-gate" class="view">
+  <div class="gate-card">
+    <div class="gate-mascot" id="gate-mascot"></div>
+    <div class="gate-title" data-i18n="gate_title">需要 PartyKeys 36 Keys</div>
+    <div class="gate-sub" data-i18n="gate_sub">这门课每节都用 LED 灯告诉你弹哪。请把 PartyKeys 用 USB 接入电脑，然后用支持 Web MIDI 的浏览器（Chrome / Edge）打开。</div>
+    <div>
+      <button class="gate-btn" id="gate-retry" data-i18n="gate_retry">重新检测</button>
+      <button class="gate-btn secondary" id="gate-demo" data-i18n="gate_demo">没设备？先用屏幕键盘试玩</button>
+    </div>
+  </div>
+</section>
+
+<!-- ===========================================================
+     CTA BAR (lesson feedback)
+     =========================================================== -->
+<div class="cta-bar" id="cta-bar">
+  <div class="cta-feedback" id="cta-feedback"></div>
+  <button class="cta-btn" id="cta-btn" data-i18n="continue">继续</button>
+</div>
+
+<!-- ===========================================================
+     MASCOT BUBBLE
+     =========================================================== -->
+<div id="mascot">
+  <div id="mascot-svg-slot" class="mascot-svg"></div>
+  <div class="speech-bubble" id="mascot-bubble"></div>
+</div>
+
+<!-- Confetti container -->
+<div id="confetti-canvas"></div>
+
+<script>
+"use strict";
+
+/* ============================================================
+   1) STATE & PERSISTENCE
+   ============================================================ */
+const SAVE_KEY = "pk_lessons_v1";
+const DEFAULT_STATE = {
+  xp: 0, level: 1,
+  hearts: 3, heartsRefillAt: 0,
+  streak: 0, streakLastDay: "",
+  starsByLesson: {},
+  unlockedUpTo: "0.1",
+  lang: "zh", tone: "kid",
+};
+let state = loadState();
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return { ...DEFAULT_STATE };
+    return { ...DEFAULT_STATE, ...JSON.parse(raw) };
+  } catch (e) { return { ...DEFAULT_STATE }; }
+}
+function saveState() {
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); } catch (e) {}
+}
+
+/* ============================================================
+   2) i18n + TONE
+   ============================================================ */
+const DICT = {
+  home_title:   { zh: "PartyKeys 小琴课", en: "PartyKeys Lessons" },
+  home_sub:     { zh: "跟着灯走 · 5 分钟一课", en: "Follow the lights · 5 min a lesson" },
+  result_great: { zh: "太棒了！", en: "Great job!" },
+  streak:       { zh: "连击", en: "Streak" },
+  continue:     { zh: "继续", en: "Continue" },
+  gate_title:   { zh: "需要 PartyKeys 36 Keys", en: "PartyKeys 36 Keys required" },
+  gate_sub:     { zh: "这门课每节都用 LED 灯告诉你弹哪。请把 PartyKeys 用 USB 接入电脑，然后用支持 Web MIDI 的浏览器（Chrome / Edge）打开。",
+                  en: "Every lesson uses LEDs to show what to play. Plug your PartyKeys via USB and open this page in a Web-MIDI browser (Chrome or Edge)." },
+  gate_retry:   { zh: "重新检测", en: "Retry detection" },
+  gate_demo:    { zh: "没设备？先用屏幕键盘试玩", en: "No device? Try with on-screen keyboard" },
+  midi_checking:{ zh: "检测中…", en: "Checking…" },
+  midi_pk:      { zh: "PartyKeys 已连接", en: "PartyKeys connected" },
+  midi_generic: { zh: "MIDI 已连接（非 PartyKeys）", en: "MIDI connected (not PartyKeys)" },
+  midi_none:    { zh: "未检测到 MIDI 设备", en: "No MIDI device detected" },
+  midi_denied:  { zh: "浏览器拒绝了 MIDI 权限", en: "Browser denied MIDI permission" },
+  midi_unsup:   { zh: "浏览器不支持 Web MIDI", en: "Web MIDI not supported" },
+  module_onboard:{ zh: "入门导引", en: "Onboarding" },
+  module_melody:{ zh: "旋律", en: "Melody" },
+  module_chord: { zh: "和弦", en: "Chord" },
+  module_rhythm:{ zh: "节奏", en: "Rhythm" },
+  module_locked:{ zh: "（敬请期待）", en: "(coming soon)" },
+  cta_correct:  { zh: "对！太棒了", en: "Correct!" },
+  cta_wrong:    { zh: "再试一次", en: "Try again" },
+  cta_done:     { zh: "完成本关", en: "Complete lesson" },
+  q_play_lit:   { zh: "弹亮起来的键", en: "Play the lit key" },
+  q_echo:       { zh: "听完后弹一遍", en: "Listen then play" },
+  q_choose:     { zh: "你听到的是？", en: "What did you hear?" },
+  q_sequence:   { zh: "按顺序记住并弹回", en: "Memorize the sequence" },
+  q_perform:    { zh: "完整弹一段", en: "Play the full piece" },
+  hint_replay:  { zh: "再听一遍", en: "Replay" },
+  ming_intro_kid:   { zh: "你好呀！我是鸣鸣 准备好弹琴了吗？", en: "Hi! I'm Ming-Ming. Ready to play?" },
+  ming_intro_adult: { zh: "欢迎。每课约 5 分钟，跟随 LED 提示完成即可。", en: "Welcome. Each lesson takes ~5 min — follow the LEDs." },
+  ming_correct_kid: { zh: "哇，你真棒！", en: "Wow, well done!" },
+  ming_correct_adult:{ zh: "正确。", en: "Correct." },
+  ming_wrong_kid:   { zh: "没关系，我们再来！", en: "It's okay, let's try again!" },
+  ming_wrong_adult: { zh: "再试一次。", en: "Try again." },
+  ming_demo_kid:    { zh: "看好啦，我弹给你看", en: "Watch — I'll show you" },
+  ming_demo_adult:  { zh: "演示：跟随 LED 顺序。", en: "Demo: follow the LED order." },
+  starbar_perfect:  { zh: "满分通过！", en: "Perfect run!" },
+  starbar_good:     { zh: "干得好", en: "Nice work" },
+  starbar_pass:     { zh: "完成", en: "Completed" },
+};
+
+function t(key) {
+  const e = DICT[key];
+  if (!e) return key;
+  return e[state.lang] || e.zh;
+}
+
+function applyI18n() {
+  document.querySelectorAll("[data-i18n]").forEach(el => {
+    el.innerHTML = t(el.getAttribute("data-i18n"));
+  });
+  document.documentElement.lang = state.lang === "zh" ? "zh-CN" : "en";
+}
+
+function setLang(l) { state.lang = l; saveState(); refreshToggles(); applyI18n(); refreshPath(); }
+function setTone(t) { state.tone = t; saveState(); refreshToggles(); }
+
+function refreshToggles() {
+  document.getElementById("lang-zh").classList.toggle("on", state.lang === "zh");
+  document.getElementById("lang-en").classList.toggle("on", state.lang === "en");
+  document.getElementById("tone-kid").classList.toggle("on", state.tone === "kid");
+  document.getElementById("tone-adult").classList.toggle("on", state.tone === "adult");
+}
+
+/* ============================================================
+   3) MIDI / LED / SYSEX
+   ============================================================ */
+const LED_COLORS = {
+  off: 0, red: 0x01, orange: 0x03, yellow: 0x05,
+  yellowgreen: 0x06, green: 0x07, cyan: 0x08, blue: 0x09,
+  deepblue: 0x0A, indigo: 0x0B, purple: 0x0C, white: 0x06,
+};
+const LED_ROLE = {
+  target: "green", candidate: "yellow", beat: "blue",
+  root: "purple", third: "orange", reference: "cyan", wrong: "red",
+};
+
+let midiAccess = null;
+let midiInputs = [];
+let midiOutputs = [];
+let pkOutput = null;     // device matching /partykey/i for SysEx LED
+let onMidiNote = null;   // (note, velocity, isOn) callback
+let demoMode = false;    // on-screen keyboard fallback when no PartyKeys
+
+function setMidiPill(text, klass) {
+  const pill = document.getElementById("midi-pill");
+  pill.classList.remove("connected","warning","error");
+  if (klass) pill.classList.add(klass);
+  document.getElementById("midi-text").textContent = text;
+}
+
+async function initMidi() {
+  if (!navigator.requestMIDIAccess) {
+    setMidiPill(t("midi_unsup"), "error");
+    showView("view-gate"); return;
+  }
+  try {
+    setMidiPill(t("midi_checking"));
+    midiAccess = await navigator.requestMIDIAccess({ sysex: true });
+    midiAccess.onstatechange = scanMidi;
+    scanMidi();
+  } catch (e) {
+    setMidiPill(t("midi_denied"), "error");
+    showView("view-gate");
+  }
+}
+function scanMidi() {
+  if (!midiAccess) return;
+  midiInputs = []; midiOutputs = []; pkOutput = null;
+  for (const input of midiAccess.inputs.values()) {
+    midiInputs.push(input);
+    input.onmidimessage = handleMidiMessage;
+  }
+  for (const output of midiAccess.outputs.values()) {
+    midiOutputs.push(output);
+    if (/partykey/i.test(output.name)) pkOutput = output;
+  }
+  const pkInput = midiInputs.find(d => /partykey/i.test(d.name));
+  if (pkOutput) {
+    setMidiPill(t("midi_pk"), "connected");
+    pkLedInit(pkOutput);
+    pkAllOff(pkOutput);
+    if (currentView === "view-gate") showView("view-home");
+  } else if (midiInputs.length > 0) {
+    setMidiPill(t("midi_generic"), "warning");
+  } else if (!demoMode) {
+    setMidiPill(t("midi_none"), "error");
+    if (currentView === "view-home" || currentView === "view-gate") showView("view-gate");
+  }
+}
+
+function handleMidiMessage(event) {
+  const [status, note, velocity] = event.data;
+  const cmd = status & 0xf0;
+  if (cmd === 0x90 && velocity > 0) {
+    if (onMidiNote) onMidiNote(note, velocity, true);
+    flashKey(note, true);
+  } else if (cmd === 0x80 || (cmd === 0x90 && velocity === 0)) {
+    if (onMidiNote) onMidiNote(note, 0, false);
+    flashKey(note, false);
+  }
+}
+
+function pkLedInit(out) {
+  out.send([0xF0,0x05,0x30,0x7F,0x7F,0x20,0x00,0x0F,0x05,0xF7]);
+}
+function pkAllOff(out) {
+  if (!out) return;
+  out.send([0xF0,0x05,0x30,0x7F,0x7F,0x20,0x00,0x71,0x00,0xF7]);
+}
+function pkSendLed(out, pairs) {
+  if (!out || !pairs.length) return;
+  const msg = [0xF0,0x05,0x30,0x7F,0x7F,0x20,0x00,0x71, pairs.length & 0x7f];
+  for (const [n,c] of pairs) msg.push(n & 0x7f, c & 0x7f);
+  msg.push(0xF7);
+  out.send(msg);
+}
+function pkSendOne(out, note, color) {
+  if (!out) return;
+  out.send([0xF0,0x05,0x30,0x7F,0x7F,0x20,0x00,0x71,1, note & 0x7f, color & 0x7f, 0xF7]);
+}
+
+function led(notes, role) {
+  const color = LED_COLORS[LED_ROLE[role] || role] || LED_COLORS.green;
+  if (pkOutput) {
+    if (Array.isArray(notes)) pkSendLed(pkOutput, notes.map(n => [n, color]));
+    else pkSendOne(pkOutput, notes, color);
+  }
+  // also light on-screen keyboard
+  const arr = Array.isArray(notes) ? notes : [notes];
+  arr.forEach(n => screenLight(n, role));
+}
+function ledOff(notes) {
+  const arr = Array.isArray(notes) ? notes : [notes];
+  if (pkOutput) {
+    arr.forEach(n => pkSendOne(pkOutput, n, 0));
+  }
+  arr.forEach(n => screenLight(n, "off"));
+}
+function ledClearAll() {
+  pkAllOff(pkOutput);
+  document.querySelectorAll(".key").forEach(k => {
+    k.className = k.className.replace(/\blit-\w+/g,"").trim();
+  });
+}
+
+/* ============================================================
+   4) AUDIO (multi-harmonic piano)
+   ============================================================ */
+let audioCtx = null;
+function ensureAudio() {
+  if (!audioCtx) {
+    try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
+  }
+  if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+  return audioCtx;
+}
+function midiToFreq(n) { return 440 * Math.pow(2, (n - 69) / 12); }
+function playNote(note, dur = 0.6, gain = 0.18) {
+  const ctx = ensureAudio(); if (!ctx) return;
+  const f = midiToFreq(note);
+  const t0 = ctx.currentTime;
+  const out = ctx.createGain();
+  out.gain.value = 0;
+  out.gain.setValueAtTime(0, t0);
+  out.gain.linearRampToValueAtTime(gain, t0 + 0.01);
+  out.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  out.connect(ctx.destination);
+  // 4 harmonics
+  [1, 2, 3, 4].forEach((h, i) => {
+    const o = ctx.createOscillator();
+    o.type = "sine";
+    o.frequency.value = f * h;
+    const g = ctx.createGain();
+    g.gain.value = 1 / (h * h);
+    o.connect(g).connect(out);
+    o.start(t0);
+    o.stop(t0 + dur + 0.05);
+  });
+}
+function playSeq(notes, gap = 0.45, dur = 0.4) {
+  const ctx = ensureAudio(); if (!ctx) return;
+  notes.forEach((n, i) => setTimeout(() => playNote(n, dur), i * gap * 1000));
+}
+function dingCorrect() { playNote(72, 0.15, 0.08); setTimeout(() => playNote(76, 0.18, 0.1), 80); }
+function buzzWrong()   { playNote(53, 0.18, 0.06); setTimeout(() => playNote(50, 0.22, 0.06), 80); }
+
+/* ============================================================
+   5) ON-SCREEN KEYBOARD (PartyKeys 36 keys, MIDI 48-83)
+   ============================================================ */
+const PK_LOW = 48, PK_HIGH = 83; // C3..B5 inclusive
+const NOTE_NAMES = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+function noteName(n) { return NOTE_NAMES[n % 12] + Math.floor(n/12 - 1); }
+function noteShort(n) { return NOTE_NAMES[n % 12]; }
+function isBlack(n) { return [1,3,6,8,10].includes(n % 12); }
+
+function buildKeyboard(container, lowOpt, highOpt) {
+  const low = lowOpt || PK_LOW;    // default: PartyKeys full 36 keys (C3..B5)
+  const high = highOpt || PK_HIGH;
+  container.innerHTML = "";
+  const kb = document.createElement("div");
+  kb.className = "keyboard";
+  // First, count whites
+  const whites = [];
+  for (let n = low; n <= high; n++) if (!isBlack(n)) whites.push(n);
+  const whiteWidth = 100 / whites.length;
+  // Build whites
+  whites.forEach((n, idx) => {
+    const k = document.createElement("div");
+    k.className = "key white";
+    k.dataset.note = n;
+    k.style.flex = "1";
+    const lab = document.createElement("span");
+    lab.textContent = noteShort(n);
+    k.appendChild(lab);
+    k.addEventListener("pointerdown", () => virtualPress(n));
+    k.addEventListener("pointerup", () => virtualRelease(n));
+    k.addEventListener("pointerleave", () => virtualRelease(n));
+    kb.appendChild(k);
+  });
+  // Build blacks (overlay)
+  let whiteIdx = 0;
+  for (let n = low; n <= high; n++) {
+    if (isBlack(n)) {
+      const k = document.createElement("div");
+      k.className = "key black";
+      k.dataset.note = n;
+      const leftPct = (whiteIdx) * whiteWidth - whiteWidth * 0.18;
+      k.style.left = leftPct + "%";
+      k.style.width = (whiteWidth * 0.62) + "%";
+      k.addEventListener("pointerdown", (e) => { e.stopPropagation(); virtualPress(n); });
+      k.addEventListener("pointerup", (e) => { e.stopPropagation(); virtualRelease(n); });
+      k.addEventListener("pointerleave", () => virtualRelease(n));
+      kb.appendChild(k);
+    } else {
+      whiteIdx++;
+    }
+  }
+  container.appendChild(kb);
+}
+function virtualPress(n) {
+  ensureAudio();
+  playNote(n, 0.6, 0.16);
+  if (onMidiNote) onMidiNote(n, 100, true);
+  flashKey(n, true);
+}
+function virtualRelease(n) {
+  if (onMidiNote) onMidiNote(n, 0, false);
+  flashKey(n, false);
+}
+function flashKey(n, isOn) {
+  document.querySelectorAll('.key[data-note="' + n + '"]').forEach(k => {
+    k.classList.toggle("pressed", isOn);
+  });
+}
+function screenLight(n, role) {
+  document.querySelectorAll('.key[data-note="' + n + '"]').forEach(k => {
+    k.className = k.className.replace(/\blit-\w+/g,"").trim();
+    if (role && role !== "off") {
+      const colorName = LED_ROLE[role] || role;
+      k.classList.add("lit-" + colorName);
+    }
+  });
+}
+
+/* ============================================================
+   6) MASCOT — Ming-Ming the parrot, redrawn premium
+   ============================================================ */
+function mingSvg(mood) {
+  // mood: happy | scratch | sleep | dance
+  // Cartoon parrot: rounded body, headphones, beak, blush.
+  // Eyes
+  const eye = mood === "sleep"
+    ? '<path d="M40 46 q5 -3 10 0" stroke="#1A1D24" stroke-width="2.5" fill="none" stroke-linecap="round"/><path d="M62 46 q5 -3 10 0" stroke="#1A1D24" stroke-width="2.5" fill="none" stroke-linecap="round"/>'
+    : `
+      <g>
+        <ellipse cx="44" cy="46" rx="5" ry="6" fill="white"/>
+        <ellipse cx="68" cy="46" rx="5" ry="6" fill="white"/>
+        <circle cx="${mood==="dance"?46:44}" cy="47" r="3" fill="#1A1D24"/>
+        <circle cx="${mood==="dance"?70:68}" cy="47" r="3" fill="#1A1D24"/>
+        <circle cx="${mood==="dance"?47:45}" cy="45.5" r="1" fill="white"/>
+        <circle cx="${mood==="dance"?71:69}" cy="45.5" r="1" fill="white"/>
+      </g>`;
+  // Cheeks (blush)
+  const cheek = (mood === "happy" || mood === "dance")
+    ? '<ellipse cx="32" cy="55" rx="6" ry="4" fill="#FFAEB6" opacity="0.7"/><ellipse cx="80" cy="55" rx="6" ry="4" fill="#FFAEB6" opacity="0.7"/>'
+    : '';
+  // Mouth/expression beneath beak
+  const mouth = mood === "scratch"
+    ? '<path d="M48 62 q8 -3 16 0" stroke="#1A1D24" stroke-width="2" fill="none" stroke-linecap="round"/>'
+    : mood === "dance"
+      ? '<path d="M46 60 q10 8 20 0" stroke="#1A1D24" stroke-width="2.5" fill="#FFD8A8" stroke-linecap="round"/>'
+      : '<path d="M48 60 q8 4 16 0" stroke="#1A1D24" stroke-width="2" fill="none" stroke-linecap="round"/>';
+
+  // Wings & arms
+  const wingL = mood === "dance"
+    ? '<path d="M22 60 Q4 48 10 30" stroke="#3F9700" stroke-width="7" fill="#58CC02" stroke-linecap="round"/>'
+    : '<path d="M20 62 Q12 78 22 84" stroke="#3F9700" stroke-width="3" fill="#58CC02" stroke-linecap="round"/>';
+  const wingR = mood === "scratch"
+    ? '<path d="M92 58 Q104 38 90 22" stroke="#3F9700" stroke-width="7" fill="#58CC02" stroke-linecap="round"/>'
+    : mood === "dance"
+      ? '<path d="M92 60 Q110 48 104 30" stroke="#3F9700" stroke-width="7" fill="#58CC02" stroke-linecap="round"/>'
+      : '<path d="M94 62 Q102 78 92 84" stroke="#3F9700" stroke-width="3" fill="#58CC02" stroke-linecap="round"/>';
+
+  // Tail feathers (3 quills, varying greens)
+  const tail = `
+    <path d="M50 92 Q42 102 38 110" stroke="#3F9700" stroke-width="6" fill="none" stroke-linecap="round"/>
+    <path d="M57 92 Q57 104 57 112" stroke="#4CAF00" stroke-width="6" fill="none" stroke-linecap="round"/>
+    <path d="M64 92 Q72 102 76 110" stroke="#3F9700" stroke-width="6" fill="none" stroke-linecap="round"/>`;
+
+  // Feet
+  const feet = mood === "dance"
+    ? '<path d="M48 92 l-3 6 m6 -6 l-1 8 m4 -8 l3 6" stroke="#FF9600" stroke-width="2.5" stroke-linecap="round"/>'
+    : '<path d="M48 92 l-2 6 l-3 0 m5 -6 l0 7 l-3 0 m9 -7 l3 0 l0 7 m-3 -7 l5 6 l3 0" stroke="#FF9600" stroke-width="2" stroke-linecap="round" fill="none"/>';
+
+  return `<svg viewBox="0 0 112 116" class="mascot-svg" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <radialGradient id="mingBody" cx="50%" cy="40%" r="60%">
+        <stop offset="0%" stop-color="#7FE12E"/>
+        <stop offset="60%" stop-color="#58CC02"/>
+        <stop offset="100%" stop-color="#3F9700"/>
+      </radialGradient>
+      <radialGradient id="mingHead" cx="50%" cy="40%" r="60%">
+        <stop offset="0%" stop-color="#85E534"/>
+        <stop offset="80%" stop-color="#58CC02"/>
+      </radialGradient>
+      <linearGradient id="mingBelly" x1="0" x2="0" y1="0" y2="1">
+        <stop offset="0%" stop-color="#D9F8AE"/>
+        <stop offset="100%" stop-color="#B8EE7A"/>
+      </linearGradient>
+      <linearGradient id="mingHP" x1="0" x2="0" y1="0" y2="1">
+        <stop offset="0%" stop-color="#C68BFF"/>
+        <stop offset="100%" stop-color="#823CC0"/>
+      </linearGradient>
+    </defs>
+
+    <!-- shadow -->
+    <ellipse cx="56" cy="111" rx="22" ry="3" fill="#1A1D24" opacity="0.12"/>
+
+    ${tail}
+
+    <!-- body -->
+    <ellipse cx="56" cy="74" rx="28" ry="22" fill="url(#mingBody)"/>
+    <!-- belly highlight -->
+    <ellipse cx="56" cy="78" rx="18" ry="14" fill="url(#mingBelly)"/>
+
+    ${feet}
+
+    ${wingL}${wingR}
+
+    <!-- head -->
+    <circle cx="56" cy="44" r="26" fill="url(#mingHead)"/>
+    <!-- soft highlight -->
+    <ellipse cx="46" cy="32" rx="8" ry="5" fill="white" opacity="0.25"/>
+
+    <!-- headphones band -->
+    <path d="M30 30 Q56 8 82 30" stroke="url(#mingHP)" stroke-width="5" fill="none" stroke-linecap="round"/>
+    <!-- headphone cups -->
+    <rect x="22" y="30" width="11" height="16" rx="4" fill="url(#mingHP)"/>
+    <rect x="79" y="30" width="11" height="16" rx="4" fill="url(#mingHP)"/>
+    <rect x="24" y="32" width="3" height="12" rx="1.5" fill="white" opacity="0.4"/>
+
+    <!-- beak (curved, lighter top, darker bottom) -->
+    <path d="M48 53 Q56 70 64 53 Q60 60 56 60 Q52 60 48 53Z" fill="#FF9600"/>
+    <path d="M48 53 Q56 64 64 53" stroke="#E07F00" stroke-width="1.5" fill="none"/>
+
+    ${eye}
+    ${cheek}
+    ${mouth}
+  </svg>`;
+}
+
+function showMascot(text, mood = "happy", dur = 3500) {
+  const m = document.getElementById("mascot");
+  document.getElementById("mascot-svg-slot").outerHTML = mingSvg(mood).replace("class=\"mascot-svg\"", "class=\"mascot-svg\" id=\"mascot-svg-slot\"");
+  document.getElementById("mascot-bubble").textContent = text;
+  m.classList.add("show");
+  clearTimeout(showMascot._t);
+  if (dur > 0) showMascot._t = setTimeout(hideMascot, dur);
+}
+function hideMascot() { document.getElementById("mascot").classList.remove("show"); }
+
+/* ============================================================
+   7) LESSON DEFINITIONS  (7 lessons in MVP slice)
+   ============================================================ */
+// Use middle-octave anchor: C4=60
+const C4=60, D4=62, E4=64, F4=65, G4=67, A4=69, B4=71, C5=72, D5=74, E5=76, F5=77, G5=79, A5=81, B5=83;
+
+const LESSONS = [
+  // ===== Module 0: Onboarding =====
+  {
+    id: "0.1", module: "onboarding",
+    title: { zh: "你好 PartyKeys", en: "Hello PartyKeys" },
+    intro: {
+      kid:   { zh: "鸣鸣给你一个见面礼 — 弹任意三个键，让琴亮一遍灯！", en: "Welcome gift from Ming-Ming! Play any 3 keys to wake the keyboard." },
+      adult: { zh: "首关：弹任意三个键，确认 LED 与 MIDI 双向连通。", en: "First lesson: play any 3 keys to confirm LED + MIDI two-way link." },
+    },
+    questions: [
+      { type: "T_ANY", count: 3, prompt: "any_3" },
+    ],
+    bossXp: 10,
+  },
+
+  {
+    id: "0.2", module: "onboarding",
+    title: { zh: "灯告诉你弹哪", en: "Follow the Light" },
+    intro: {
+      kid:   { zh: "看！哪个键变绿了？就弹它！", en: "Look! Which key turned green? Play it!" },
+      adult: { zh: "T1 题型：跟随绿色 LED 提示完成 5 次单键弹奏。", en: "T1 type: follow the green LED to play 5 single-key prompts." },
+    },
+    questions: [
+      { type: "T1", target: C4 }, { type: "T1", target: E4 },
+      { type: "T1", target: G4 }, { type: "T1", target: D4 }, { type: "T1", target: F4 },
+    ],
+  },
+
+  {
+    id: "0.3", module: "onboarding",
+    title: { zh: "错了灯会变红", en: "Wrong = Red" },
+    intro: {
+      kid:   { zh: "如果你弹错，灯会变红 — 没关系，再来一次就好啦！", en: "If you miss, the light turns red — no worries, just try again!" },
+      adult: { zh: "继续 5 次 T1。错音会触发红色 LED 反馈。", en: "Five more T1s. Wrong notes trigger red LED feedback." },
+    },
+    questions: [
+      { type: "T1", target: C5 }, { type: "T1", target: B4 },
+      { type: "T1", target: A4 }, { type: "T1", target: E4 }, { type: "T1", target: G4 },
+    ],
+  },
+
+  {
+    id: "0.4", module: "onboarding", isBoss: true,
+    title: { zh: "第一次小演奏", en: "Your First Tune" },
+    intro: {
+      kid:   { zh: "你已经准备好啦！来弹《小星星》开头六个音", en: "You're ready! Play the first 6 notes of Twinkle Twinkle" },
+      adult: { zh: "T8 小演奏：照亮顺序弹完《小星星》前 6 音 (C C G G A A)。", en: "T8 mini-performance: play the lit sequence — Twinkle Twinkle first 6 notes (C C G G A A)." },
+    },
+    questions: [
+      { type: "T8", sequence: [C4, C4, G4, G4, A4, A4], gap: 700, label: "Twinkle Twinkle" },
+    ],
+    bossXp: 20,
+  },
+
+  // ===== Module 1: Melody =====
+  {
+    id: "1.1", module: "melody",
+    title: { zh: "C D E 三兄弟", en: "C D E — three brothers" },
+    intro: {
+      kid:   { zh: "白键最左边的三个小伙伴：C、D、E！", en: "Three friends on the white keys: C, D, E!" },
+      adult: { zh: "认识 C-D-E 的相对位置与音名。", en: "Learn the names and positions of C, D, E." },
+    },
+    questions: [
+      { type: "T1", target: C4 },
+      { type: "T1", target: D4 },
+      { type: "T1", target: E4 },
+      { type: "T3", target: C4, choices: ["C","D","E","F"] },
+      { type: "T3", target: D4, choices: ["C","D","E","F"] },
+      { type: "T3", target: E4, choices: ["C","D","E","F"] },
+    ],
+  },
+
+  {
+    id: "1.2", module: "melody",
+    title: { zh: "凑齐七个白键", en: "All seven whites" },
+    intro: {
+      kid:   { zh: "C D E F G A B — 七个朋友手拉手！", en: "C D E F G A B — seven friends hand in hand!" },
+      adult: { zh: "扩展到完整白键音阶 + 序列复现练习。", en: "Extend to the full white-key scale + sequence recall." },
+    },
+    questions: [
+      { type: "T1", target: F4 }, { type: "T1", target: G4 },
+      { type: "T1", target: A4 }, { type: "T1", target: B4 },
+      { type: "T7", sequence: [C4, D4, E4] },
+      { type: "T7", sequence: [G4, A4, B4] },
+    ],
+  },
+
+  {
+    id: "1.3", module: "melody", isBoss: true,
+    title: { zh: "高八度也叫 C", en: "An octave up is still C" },
+    intro: {
+      kid:   { zh: "C 有好几个，高的、低的都叫 C — 它们是一家人", en: "There are many Cs — high, low, all family" },
+      adult: { zh: "理解八度概念：同一音名在不同位置。", en: "Understand octaves: same note name, different positions." },
+    },
+    questions: [
+      { type: "T1", target: C4 },
+      { type: "T1", target: C5 },
+      { type: "T2", target: C4 },
+      { type: "T2", target: C5 },
+      { type: "T3", target: C5, choices: ["C", "D", "G", "B"], hint: { zh: "提示：C 永远在两个黑键的左边", en: "Hint: C is always left of the 2-black-key group." } },
+    ],
+    bossXp: 25,
+  },
+];
+
+const MODULES = [
+  { id: "onboarding", labelKey: "module_onboard", color: "green",  open: true },
+  { id: "melody",     labelKey: "module_melody",  color: "blue",   open: true },
+  { id: "chord",      labelKey: "module_chord",   color: "purple", open: false },
+  { id: "rhythm",     labelKey: "module_rhythm",  color: "orange", open: false },
+];
+
+/* ============================================================
+   8) PROGRESSION
+   ============================================================ */
+function lessonIndex(id) { return LESSONS.findIndex(l => l.id === id); }
+function isUnlocked(id) {
+  const i = lessonIndex(id);
+  const u = lessonIndex(state.unlockedUpTo);
+  return i <= u;
+}
+function isCompleted(id) { return (state.starsByLesson[id] || 0) > 0; }
+function unlockNext(id) {
+  const i = lessonIndex(id);
+  if (i < LESSONS.length - 1) {
+    const next = LESSONS[i + 1].id;
+    if (lessonIndex(next) > lessonIndex(state.unlockedUpTo)) {
+      state.unlockedUpTo = next;
+    }
+  }
+  saveState();
+}
+function awardLesson(id, stars, xp) {
+  const prev = state.starsByLesson[id] || 0;
+  if (stars > prev) state.starsByLesson[id] = stars;
+  state.xp += xp;
+  while (state.xp >= state.level * 100) state.level += 1;
+  // streak
+  const today = new Date().toISOString().slice(0, 10);
+  if (state.streakLastDay !== today) {
+    const last = state.streakLastDay;
+    state.streak = last && daysDiff(last, today) === 1 ? state.streak + 1 : 1;
+    state.streakLastDay = today;
+  }
+  // hearts refill if completed without losing all
+  if (state.hearts < 3 && stars >= 1) state.hearts = Math.min(3, state.hearts + 1);
+  unlockNext(id);
+  saveState();
+}
+function daysDiff(d1, d2) {
+  return Math.round((new Date(d2) - new Date(d1)) / 86400000);
+}
+
+/* ============================================================
+   9) PATH MAP — with REAL SVG path connectors
+   ============================================================ */
+function moduleNodeIcon(mod, isBoss) {
+  if (isBoss) return "ico-crown";
+  if (mod === "melody")     return "ico-beam";
+  if (mod === "chord")      return "ico-sixteenth";
+  if (mod === "rhythm")     return "ico-note";
+  if (mod === "onboarding") return "ico-note";
+  return "ico-note";
+}
+function moduleBannerIcon(mod) {
+  if (mod === "onboarding") return "ico-headphones";
+  if (mod === "melody")     return "ico-clef";
+  if (mod === "chord")      return "ico-sixteenth";
+  if (mod === "rhythm")     return "ico-beam";
+  return "ico-note";
+}
+
+function refreshPath() {
+  const c = document.getElementById("path-container");
+  c.innerHTML = "";
+  MODULES.forEach((mod, mi) => {
+    const block = document.createElement("div");
+    block.className = "module-block";
+    const banner = document.createElement("div");
+    banner.className = "module-banner " + mod.id;
+    const lessonsInModule = LESSONS.filter(l => l.module === mod.id);
+    const completedCount = lessonsInModule.filter(l => isCompleted(l.id)).length;
+    banner.innerHTML = `
+      <div class="module-banner-left">
+        <div class="module-banner-icon">
+          <svg width="22" height="22" style="color:white"><use href="#${moduleBannerIcon(mod.id)}"/></svg>
+        </div>
+        <span>${t(mod.labelKey)}</span>
+      </div>
+      <span class="module-banner-meta">${mod.open ? `${completedCount}/${lessonsInModule.length}` : t("module_locked")}</span>
+    `;
+    block.appendChild(banner);
+    if (!mod.open) {
+      block.style.opacity = "0.5";
+      c.appendChild(block);
+      return;
+    }
+    const path = document.createElement("div");
+    path.className = "path";
+
+    // Build node positions (col index 0=left,1=center,2=right)
+    const colMap = ["center", "left", "center", "right", "center", "left", "right"];
+    const positions = lessonsInModule.map((les, i) => colMap[i % colMap.length]);
+
+    // Build node rows first (for measuring)
+    lessonsInModule.forEach((les, i) => {
+      const row = document.createElement("div");
+      row.className = "node-row";
+      const slot = document.createElement("div");
+      slot.className = "node-slot " + positions[i];
+      const node = document.createElement("div");
+      node.className = "lesson-node";
+      const stars = state.starsByLesson[les.id] || 0;
+      const completed = stars > 0;
+      const unlocked = isUnlocked(les.id);
+      const isCurrent = !completed && unlocked;
+      if (les.isBoss) node.classList.add("boss");
+      if (completed) node.classList.add("completed");
+      else if (isCurrent) node.classList.add("current");
+      else if (unlocked) node.classList.add("unlocked");
+
+      // Vector icon
+      const iconId = (() => {
+        if (completed) return "ico-check";
+        if (les.isBoss) return "ico-crown";
+        if (!unlocked) return "ico-lock";
+        return moduleNodeIcon(mod.id, les.isBoss);
+      })();
+      node.innerHTML = `<svg><use href="#${iconId}"/></svg>`;
+
+      // Pulsing ring (for current)
+      if (isCurrent) {
+        const ring = document.createElement("div");
+        ring.className = "ring";
+        node.appendChild(ring);
+      }
+
+      // Label
+      const lab = document.createElement("div");
+      lab.className = "lesson-label";
+      lab.textContent = les.title[state.lang];
+      node.appendChild(lab);
+
+      // Stars
+      if (completed) {
+        const sd = document.createElement("div");
+        sd.className = "lesson-stars";
+        sd.textContent = "★".repeat(stars) + "☆".repeat(3 - stars);
+        node.appendChild(sd);
+      }
+
+      if (unlocked) {
+        node.addEventListener("click", () => startLesson(les.id));
+      }
+      slot.appendChild(node);
+      row.appendChild(slot);
+      path.appendChild(row);
+    });
+
+    // Real SVG connector path between nodes
+    const svgNS = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(svgNS, "svg");
+    svg.setAttribute("class", "path-svg");
+    svg.setAttribute("preserveAspectRatio", "none");
+    svg.innerHTML = `
+      <defs>
+        <linearGradient id="trackGrad-${mod.id}" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="${mod.id==='onboarding'?'#58CC02':mod.id==='melody'?'#1CB0F6':mod.id==='chord'?'#A560E8':'#FF9600'}"/>
+          <stop offset="100%" stop-color="${mod.id==='onboarding'?'#3F9700':mod.id==='melody'?'#0E8FD0':mod.id==='chord'?'#7733C5':'#E07F00'}"/>
+        </linearGradient>
+      </defs>
+    `;
+    path.appendChild(svg);
+
+    block.appendChild(path);
+    c.appendChild(block);
+
+    // After insertion, compute geometry and draw the SVG path through node centers
+    requestAnimationFrame(() => {
+      const pathRect = path.getBoundingClientRect();
+      const W = pathRect.width;
+      const H = pathRect.height;
+      svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+      svg.setAttribute("width", W);
+      svg.setAttribute("height", H);
+
+      const nodes = path.querySelectorAll(".lesson-node");
+      const pts = [];
+      nodes.forEach(n => {
+        const r = n.getBoundingClientRect();
+        pts.push({ x: r.left + r.width/2 - pathRect.left, y: r.top + r.height/2 - pathRect.top });
+      });
+      if (pts.length < 2) return;
+      // Build smooth bezier path through all points
+      let d = `M ${pts[0].x} ${pts[0].y}`;
+      for (let i = 1; i < pts.length; i++) {
+        const prev = pts[i-1], cur = pts[i];
+        const midY = (prev.y + cur.y) / 2;
+        d += ` C ${prev.x} ${midY}, ${cur.x} ${midY}, ${cur.x} ${cur.y}`;
+      }
+      // Background dashed track
+      const bg = document.createElementNS(svgNS, "path");
+      bg.setAttribute("class", "track-bg");
+      bg.setAttribute("d", d);
+      svg.appendChild(bg);
+
+      // Filled track up to last completed/current node
+      const completedFlags = lessonsInModule.map(les => {
+        const stars = state.starsByLesson[les.id] || 0;
+        const completed = stars > 0;
+        const unlocked = isUnlocked(les.id);
+        const isCurrent = !completed && unlocked;
+        return { completed, isCurrent };
+      });
+      // Find the index up to which we draw the filled path
+      let lastFilledIdx = -1;
+      for (let i = 0; i < completedFlags.length; i++) {
+        if (completedFlags[i].completed || completedFlags[i].isCurrent) lastFilledIdx = i;
+      }
+      if (lastFilledIdx >= 1) {
+        let fd = `M ${pts[0].x} ${pts[0].y}`;
+        for (let i = 1; i <= lastFilledIdx; i++) {
+          const prev = pts[i-1], cur = pts[i];
+          const midY = (prev.y + cur.y) / 2;
+          fd += ` C ${prev.x} ${midY}, ${cur.x} ${midY}, ${cur.x} ${cur.y}`;
+        }
+        const fill = document.createElementNS(svgNS, "path");
+        fill.setAttribute("class", "track-fill");
+        fill.setAttribute("d", fd);
+        fill.setAttribute("stroke", `url(#trackGrad-${mod.id})`);
+        fill.setAttribute("stroke-dasharray", "0");
+        svg.appendChild(fill);
+      }
+    });
+  });
+}
+
+/* ============================================================
+   10) VIEW SWITCHING
+   ============================================================ */
+let currentView = "view-home";
+function showView(id) {
+  document.querySelectorAll(".view").forEach(v => v.classList.toggle("active", v.id === id));
+  currentView = id;
+  document.getElementById("midi-pill").style.display = (id === "view-gate") ? "none" : "inline-flex";
+  if (id === "view-home") refreshPath();
+  refreshTopbar();
+}
+function refreshTopbar() {
+  document.getElementById("stat-hearts").textContent = state.hearts;
+  document.getElementById("stat-streak").textContent = state.streak;
+  document.getElementById("stat-xp").textContent = state.xp;
+  document.getElementById("stat-level").textContent = state.level;
+  document.getElementById("lesson-hearts").textContent = state.hearts;
+}
+
+/* ============================================================
+   11) LESSON RUNTIME
+   ============================================================ */
+let session = null;
+
+function startLesson(id) {
+  ensureAudio();
+  const lesson = LESSONS.find(l => l.id === id);
+  if (!lesson) return;
+  session = {
+    lesson, qIndex: 0, misses: 0, totalMisses: 0,
+    sessionHearts: state.hearts,
+    questions: lesson.questions.slice(),
+  };
+  showView("view-lesson");
+  showMascot(toned(lesson.intro), "happy", 4000);
+  renderQuestion();
+}
+
+function toned(obj) {
+  if (!obj) return "";
+  if (obj.zh || obj.en) return obj[state.lang] || obj.zh;
+  const t = obj[state.tone] || obj.kid;
+  return t[state.lang] || t.zh;
+}
+
+function renderQuestion() {
+  if (!session) return;
+  const q = session.questions[session.qIndex];
+  const slot = document.getElementById("question-slot");
+  slot.innerHTML = "";
+  document.getElementById("progress-fill").style.width = (session.qIndex / session.questions.length * 100) + "%";
+  document.getElementById("cta-bar").classList.remove("show","win","lose");
+  ledClearAll();
+
+  if (q.type === "T_ANY") renderTAny(slot, q);
+  else if (q.type === "T1") renderT1(slot, q);
+  else if (q.type === "T2") renderT2(slot, q);
+  else if (q.type === "T3") renderT3(slot, q);
+  else if (q.type === "T7") renderT7(slot, q);
+  else if (q.type === "T8") renderT8(slot, q);
+}
+
+function questionCard(title, prompt) {
+  const card = document.createElement("div");
+  card.className = "question-card";
+  card.innerHTML = `
+    <div class="q-prompt">${prompt}</div>
+    <div class="q-title">${title}</div>
+    <div class="q-body"></div>
+  `;
+  return card;
+}
+
+/* ---------- T_ANY: tap N different keys ---------- */
+function renderTAny(slot, q) {
+  const card = questionCard(state.lang === "zh" ? `弹任意 ${q.count} 个键` : `Play any ${q.count} keys`, state.lang === "zh" ? "热身" : "Warm up");
+  slot.appendChild(card);
+  const kbWrap = document.createElement("div");
+  buildKeyboard(kbWrap, PK_LOW, PK_HIGH);
+  card.querySelector(".q-body").appendChild(kbWrap);
+  for (let n = PK_LOW; n <= PK_HIGH; n++) led(n, "reference");
+  setTimeout(() => ledClearAll(), 700);
+  const tapped = new Set();
+  onMidiNote = (note, vel, isOn) => {
+    if (!isOn) return;
+    if (note < PK_LOW || note > PK_HIGH) return;
+    tapped.add(note);
+    led(note, "target");
+    setTimeout(() => ledOff(note), 250);
+    if (tapped.size >= q.count) {
+      onMidiNote = null;
+      onCorrect();
+    }
+  };
+}
+
+/* ---------- T1: play the lit key ---------- */
+function renderT1(slot, q) {
+  const card = questionCard(state.lang === "zh" ? "弹亮起来的键" : "Play the lit key", noteShort(q.target));
+  slot.appendChild(card);
+  const kbWrap = document.createElement("div");
+  buildKeyboard(kbWrap, PK_LOW, PK_HIGH);
+  card.querySelector(".q-body").appendChild(kbWrap);
+  led(q.target, "target");
+  let attempts = 0;
+  onMidiNote = (note, vel, isOn) => {
+    if (!isOn) return;
+    if (note === q.target) {
+      onMidiNote = null;
+      ledOff(q.target);
+      led(q.target, "target");
+      setTimeout(() => ledClearAll(), 300);
+      onCorrect();
+    } else {
+      attempts++;
+      led(note, "wrong");
+      setTimeout(() => ledOff(note), 350);
+      onMissAttempt(attempts, q);
+    }
+  };
+}
+
+/* ---------- T2: echo (listen then play) ---------- */
+function renderT2(slot, q) {
+  const card = questionCard(t("q_echo"), state.lang === "zh" ? "听完后弹相同的音" : "Echo what you hear");
+  slot.appendChild(card);
+  const replayWrap = document.createElement("div");
+  replayWrap.className = "replay-wrap";
+  const replay = document.createElement("button");
+  replay.className = "replay-btn";
+  replay.innerHTML = `<span>${t("hint_replay")}</span>`;
+  replayWrap.appendChild(replay);
+  card.querySelector(".q-body").appendChild(replayWrap);
+  const kbWrap = document.createElement("div");
+  buildKeyboard(kbWrap, PK_LOW, PK_HIGH);
+  card.querySelector(".q-body").appendChild(kbWrap);
+  const playTarget = () => { playNote(q.target, 0.9); led(q.target, "reference"); setTimeout(() => ledOff(q.target), 700); };
+  setTimeout(playTarget, 400);
+  replay.addEventListener("click", playTarget);
+  let attempts = 0;
+  onMidiNote = (note, vel, isOn) => {
+    if (!isOn) return;
+    if (note === q.target) {
+      onMidiNote = null;
+      onCorrect();
+    } else {
+      attempts++;
+      led(note, "wrong");
+      setTimeout(() => ledOff(note), 300);
+      onMissAttempt(attempts, q);
+    }
+  };
+}
+
+/* ---------- T3: multiple choice ear ---------- */
+function renderT3(slot, q) {
+  const card = questionCard(t("q_choose"), state.lang === "zh" ? "听音后选择" : "Listen and choose");
+  slot.appendChild(card);
+  const replayWrap = document.createElement("div");
+  replayWrap.className = "replay-wrap";
+  const replay = document.createElement("button");
+  replay.className = "replay-btn";
+  replay.innerHTML = `<span>${t("hint_replay")}</span>`;
+  replayWrap.appendChild(replay);
+  card.querySelector(".q-body").appendChild(replayWrap);
+  const grid = document.createElement("div");
+  grid.className = "choice-grid";
+  const targetName = noteShort(q.target);
+  q.choices.forEach(name => {
+    const b = document.createElement("button");
+    b.className = "choice-btn";
+    b.textContent = name;
+    b.addEventListener("click", () => {
+      if (name === targetName) {
+        b.classList.add("correct");
+        onCorrect();
+      } else {
+        b.classList.add("wrong");
+        Array.from(grid.children).forEach(c => { if (c.textContent === targetName) c.classList.add("correct"); });
+        onMissFinal(q);
+      }
+    });
+    grid.appendChild(b);
+  });
+  card.querySelector(".q-body").appendChild(grid);
+  const playT = () => playNote(q.target, 1.0);
+  setTimeout(playT, 400);
+  replay.addEventListener("click", playT);
+}
+
+/* ---------- T7: sequence Simon ---------- */
+function renderT7(slot, q) {
+  const card = questionCard(t("q_sequence"), state.lang === "zh" ? "记住顺序，再弹回来" : "Repeat the sequence");
+  slot.appendChild(card);
+  const replayWrap = document.createElement("div");
+  replayWrap.className = "replay-wrap";
+  const replay = document.createElement("button");
+  replay.className = "replay-btn";
+  replay.innerHTML = `<span>${t("hint_replay")}</span>`;
+  replayWrap.appendChild(replay);
+  card.querySelector(".q-body").appendChild(replayWrap);
+  const kbWrap = document.createElement("div");
+  buildKeyboard(kbWrap, PK_LOW, PK_HIGH);
+  card.querySelector(".q-body").appendChild(kbWrap);
+
+  let stage = "demo";
+  let inputIdx = 0;
+  let attempts = 0;
+
+  function demo() {
+    stage = "demo";
+    onMidiNote = null;
+    q.sequence.forEach((n, i) => {
+      setTimeout(() => {
+        led(n, "target");
+        playNote(n, 0.5);
+        setTimeout(() => ledOff(n), 380);
+      }, i * 600);
+    });
+    setTimeout(() => { stage = "input"; inputIdx = 0; armInput(); }, q.sequence.length * 600 + 400);
+  }
+  function armInput() {
+    onMidiNote = (note, vel, isOn) => {
+      if (!isOn || stage !== "input") return;
+      const expected = q.sequence[inputIdx];
+      if (note === expected) {
+        led(note, "target");
+        setTimeout(() => ledOff(note), 250);
+        inputIdx++;
+        if (inputIdx >= q.sequence.length) {
+          onMidiNote = null;
+          onCorrect();
+        }
+      } else {
+        attempts++;
+        led(note, "wrong");
+        setTimeout(() => ledOff(note), 300);
+        if (state.tone === "kid" && attempts >= 2) {
+          onMidiNote = null;
+          showMascot(toned({ kid: DICT.ming_demo_kid, adult: DICT.ming_demo_adult }), "scratch", 2500);
+          setTimeout(() => demo(), 1200);
+        } else {
+          onMissAttempt(attempts, q);
+        }
+      }
+    };
+  }
+  replay.addEventListener("click", demo);
+  setTimeout(demo, 500);
+}
+
+/* ---------- T8: mini performance ---------- */
+function renderT8(slot, q) {
+  const card = questionCard(t("q_perform"), q.label || (state.lang === "zh" ? "完整弹一段" : "Play it through"));
+  slot.appendChild(card);
+
+  const pills = document.createElement("div");
+  pills.className = "target-pills";
+  q.sequence.forEach((n, i) => {
+    const p = document.createElement("div");
+    p.className = "target-pill";
+    p.dataset.idx = i;
+    p.textContent = noteShort(n);
+    pills.appendChild(p);
+  });
+  card.querySelector(".q-body").appendChild(pills);
+
+  const replayWrap = document.createElement("div");
+  replayWrap.className = "replay-wrap";
+  const replay = document.createElement("button");
+  replay.className = "replay-btn";
+  replay.innerHTML = `<span>${state.lang === "zh" ? "示范一遍" : "Demo"}</span>`;
+  replayWrap.appendChild(replay);
+  card.querySelector(".q-body").appendChild(replayWrap);
+
+  const kbWrap = document.createElement("div");
+  buildKeyboard(kbWrap, PK_LOW, PK_HIGH);
+  card.querySelector(".q-body").appendChild(kbWrap);
+
+  let idx = 0, errors = 0;
+  function highlightCurrent() {
+    Array.from(pills.children).forEach((c, i) => {
+      c.classList.remove("now");
+      if (i < idx) c.classList.add("done");
+      else if (i === idx) c.classList.add("now");
+    });
+    if (idx < q.sequence.length) led(q.sequence[idx], "target");
+  }
+  function demo() {
+    onMidiNote = null;
+    q.sequence.forEach((n, i) => {
+      setTimeout(() => { led(n, "target"); playNote(n, 0.5); setTimeout(() => ledOff(n), 380); }, i * (q.gap || 700));
+    });
+    setTimeout(() => { idx = 0; errors = 0; armInput(); highlightCurrent(); }, q.sequence.length * (q.gap || 700) + 600);
+  }
+  function armInput() {
+    onMidiNote = (note, vel, isOn) => {
+      if (!isOn) return;
+      const expected = q.sequence[idx];
+      if (note === expected) {
+        led(expected, "target");
+        setTimeout(() => ledOff(expected), 200);
+        idx++;
+        highlightCurrent();
+        if (idx >= q.sequence.length) {
+          onMidiNote = null;
+          if (errors === 0) session.perfect = true;
+          if (errors <= 1) session.mostlyClean = true;
+          onCorrect();
+        }
+      } else {
+        errors++;
+        led(note, "wrong");
+        setTimeout(() => ledOff(note), 300);
+        if (state.tone === "kid" && errors >= 3) {
+          onMidiNote = null;
+          showMascot(toned({ kid: DICT.ming_demo_kid, adult: DICT.ming_demo_adult }), "scratch", 2500);
+          setTimeout(() => demo(), 1200);
+        }
+      }
+    };
+  }
+  replay.addEventListener("click", demo);
+  setTimeout(demo, 600);
+}
+
+/* ============================================================
+   12) CORRECT / WRONG HANDLERS
+   ============================================================ */
+function onCorrect() {
+  ledClearAll();
+  dingCorrect();
+  showMascot(toned({ kid: DICT.ming_correct_kid, adult: DICT.ming_correct_adult }), "happy", 1400);
+  document.getElementById("cta-feedback").textContent = t("cta_correct");
+  document.getElementById("cta-feedback").className = "cta-feedback win";
+  document.getElementById("cta-bar").classList.add("show","win");
+  document.getElementById("cta-btn").classList.remove("lose");
+  document.getElementById("cta-btn").onclick = nextQuestion;
+}
+
+function onMissAttempt(attempts, q) {
+  buzzWrong();
+  session.totalMisses++;
+  if (state.tone === "kid") {
+    if (attempts >= 3) {
+      showMascot(toned({ kid: DICT.ming_demo_kid, adult: DICT.ming_demo_adult }), "scratch", 2200);
+      setTimeout(() => {
+        if (q.target != null) { led(q.target, "target"); playNote(q.target, 0.7); setTimeout(() => { ledClearAll(); onCorrect(); }, 1200); }
+        else { onCorrect(); }
+      }, 1500);
+    } else {
+      showMascot(toned({ kid: DICT.ming_wrong_kid, adult: DICT.ming_wrong_adult }), "scratch", 1500);
+    }
+  } else {
+    state.hearts = Math.max(0, state.hearts - 1);
+    saveState(); refreshTopbar();
+    if (state.hearts <= 0) endLesson(false);
+    else showMascot(toned({ kid: DICT.ming_wrong_kid, adult: DICT.ming_wrong_adult }), "scratch", 1500);
+  }
+}
+
+function onMissFinal(q) {
+  buzzWrong();
+  session.totalMisses++;
+  if (state.tone === "adult") {
+    state.hearts = Math.max(0, state.hearts - 1);
+    saveState(); refreshTopbar();
+    if (state.hearts <= 0) { endLesson(false); return; }
+  }
+  document.getElementById("cta-feedback").textContent = t("cta_wrong");
+  document.getElementById("cta-feedback").className = "cta-feedback lose";
+  document.getElementById("cta-bar").classList.add("show","lose");
+  document.getElementById("cta-btn").classList.add("lose");
+  document.getElementById("cta-btn").onclick = nextQuestion;
+}
+
+function nextQuestion() {
+  document.getElementById("cta-bar").classList.remove("show","win","lose");
+  document.getElementById("cta-btn").classList.remove("lose");
+  session.qIndex++;
+  if (session.qIndex >= session.questions.length) {
+    endLesson(true);
+  } else {
+    renderQuestion();
+  }
+}
+
+/* ============================================================
+   12.5) CONFETTI for perfect runs
+   ============================================================ */
+function fireConfetti() {
+  const canvas = document.getElementById("confetti-canvas");
+  canvas.innerHTML = "";
+  const colors = ["#58CC02", "#FFC800", "#1CB0F6", "#A560E8", "#FF9600", "#FF4B4B"];
+  for (let i = 0; i < 80; i++) {
+    const piece = document.createElement("div");
+    piece.className = "confetti-piece";
+    const c = colors[i % colors.length];
+    piece.style.background = c;
+    piece.style.left = (Math.random() * 100) + "%";
+    piece.style.width = (6 + Math.random() * 8) + "px";
+    piece.style.height = (10 + Math.random() * 10) + "px";
+    piece.style.borderRadius = (Math.random() < 0.4 ? "50%" : "2px");
+    const driftX = (Math.random() - 0.5) * 320;
+    const fallY = window.innerHeight + 80;
+    const dur = 1500 + Math.random() * 1800;
+    const delay = Math.random() * 400;
+    const rot = (Math.random() - 0.5) * 720;
+    piece.animate([
+      { transform: `translate(0,-20px) rotate(0deg)`, opacity: 1 },
+      { transform: `translate(${driftX*0.5}px, ${fallY*0.5}px) rotate(${rot/2}deg)`, opacity: 1, offset: 0.6 },
+      { transform: `translate(${driftX}px, ${fallY}px) rotate(${rot}deg)`, opacity: 0 }
+    ], { duration: dur, delay: delay, easing: "cubic-bezier(.2,.6,.4,1)", fill: "forwards" });
+    canvas.appendChild(piece);
+  }
+  setTimeout(() => { canvas.innerHTML = ""; }, 3500);
+}
+
+function endLesson(win) {
+  hideMascot();
+  ledClearAll();
+  onMidiNote = null;
+  const total = session.questions.length;
+  const misses = session.totalMisses;
+  let stars = 0;
+  if (win) {
+    if (misses === 0) stars = 3;
+    else if (misses <= 1) stars = 2;
+    else stars = 1;
+  } else {
+    stars = 0;
+  }
+  const lesson = session.lesson;
+  const baseXp = lesson.bossXp || 10;
+  const bonus = stars >= 3 ? 5 : 0;
+  const xpEarned = win ? baseXp + bonus : 0;
+  if (win) awardLesson(lesson.id, stars, xpEarned);
+  document.getElementById("result-xp").textContent = xpEarned;
+  document.getElementById("result-streak").textContent = state.streak;
+  ["star-1","star-2","star-3"].forEach((id, i) => {
+    document.getElementById(id).classList.remove("on");
+  });
+  // Stagger star appearance
+  setTimeout(() => {
+    ["star-1","star-2","star-3"].forEach((id, i) => {
+      setTimeout(() => {
+        if (i < stars) document.getElementById(id).classList.add("on");
+      }, i * 220);
+    });
+  }, 200);
+
+  const hdr = document.getElementById("view-result").querySelector(".result-header");
+  hdr.textContent = stars >= 3 ? t("starbar_perfect") : stars >= 2 ? t("starbar_good") : (win ? t("starbar_pass") : (state.lang === "zh" ? "再来一次" : "Try again"));
+  hdr.style.color = win ? "var(--green-deep)" : "var(--red-deep)";
+  // subhead
+  const sub = document.getElementById("result-sub");
+  if (sub) {
+    sub.textContent = win
+      ? (state.lang === "zh" ? lesson.title.zh : (lesson.title.en || lesson.title.zh))
+      : (state.lang === "zh" ? "爱心耗尽，再试一次" : "Out of hearts — try again");
+  }
+  document.getElementById("mascot-result").innerHTML = mingSvg(stars >= 3 ? "dance" : (win ? "happy" : "scratch"));
+  const mr = document.getElementById("mascot-result").querySelector("svg");
+  if (mr) { mr.style.width = "140px"; mr.style.height = "140px"; }
+  document.getElementById("result-continue").onclick = () => showView("view-home");
+  showView("view-result");
+
+  // Confetti for perfect runs only
+  if (stars >= 3) {
+    setTimeout(fireConfetti, 700);
+    setTimeout(fireConfetti, 1500);
+  }
+}
+
+/* ============================================================
+   13) INIT
+   ============================================================ */
+function bindUI() {
+  document.getElementById("lang-zh").onclick = () => setLang("zh");
+  document.getElementById("lang-en").onclick = () => setLang("en");
+  document.getElementById("tone-kid").onclick   = () => setTone("kid");
+  document.getElementById("tone-adult").onclick = () => setTone("adult");
+  document.getElementById("btn-quit").onclick = () => { onMidiNote = null; ledClearAll(); hideMascot(); showView("view-home"); };
+  document.getElementById("gate-retry").onclick = () => initMidi();
+  document.getElementById("gate-demo").onclick = () => { demoMode = true; setMidiPill("Demo mode", "warning"); showView("view-home"); };
+  document.getElementById("gate-mascot").innerHTML = mingSvg("happy");
+  const gm = document.getElementById("gate-mascot").querySelector("svg");
+  if (gm) { gm.style.width = "140px"; gm.style.height = "140px"; }
+}
+
+function init() {
+  bindUI();
+  refreshToggles();
+  applyI18n();
+  refreshTopbar();
+  refreshPath();
+  showMascot(toned({ kid: DICT.ming_intro_kid, adult: DICT.ming_intro_adult }), "happy", 4000);
+  initMidi();
+  document.addEventListener("pointerdown", () => ensureAudio(), { once: true });
+}
+init();
+</script>
+</body>
+</html>

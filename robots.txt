@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://lessons.partykeys.org/sitemap.xml
