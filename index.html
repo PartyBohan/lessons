@@ -1525,6 +1525,10 @@ function handleMidiMessage(event) {
   const [status, note, velocity] = event.data;
   const cmd = status & 0xf0;
   if (cmd === 0x90 && velocity > 0) {
+    // Audible response — same as virtual on-screen press.
+    // Velocity-aware gain so soft strikes are softer.
+    const gain = 0.08 + (velocity / 127) * 0.18;
+    playNote(note, 0.7, gain);
     if (onMidiNote) onMidiNote(note, velocity, true);
     flashKey(note, true);
   } else if (cmd === 0x80 || (cmd === 0x90 && velocity === 0)) {
