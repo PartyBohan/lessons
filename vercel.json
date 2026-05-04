@@ -10,9 +10,23 @@
       ]
     },
     {
-      "source": "/(.*)\\.(svg|ico|png|jpg|jpeg|webp|woff2?|ttf)",
+      "source": "/(.*)\\.(svg|ico|png|jpg|jpeg|webp|woff2?|ttf|glb|gltf)",
       "headers": [
         { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    },
+    {
+      "source": "/(.*)\\.glb",
+      "headers": [
+        { "key": "Content-Type", "value": "model/gltf-binary" },
+        { "key": "Access-Control-Allow-Origin", "value": "*" }
+      ]
+    },
+    {
+      "source": "/(.*)\\.gltf",
+      "headers": [
+        { "key": "Content-Type", "value": "model/gltf+json" },
+        { "key": "Access-Control-Allow-Origin", "value": "*" }
       ]
     },
     {

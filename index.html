@@ -1065,7 +1065,7 @@
     align-items: flex-end;
     gap: 12px;
     pointer-events: none;
-    max-width: 320px;
+    max-width: 380px;
   }
   #mascot.show {
     display: flex;
@@ -1075,7 +1075,7 @@
     from { opacity: 0; transform: translateY(12px) scale(0.92); }
     to   { opacity: 1; transform: translateY(0) scale(1); }
   }
-  .mascot-svg { width: 88px; height: 88px; flex-shrink: 0; filter: drop-shadow(0 6px 12px rgba(20,22,28,0.18)); }
+  .mascot-svg { width: 100%; height: 100%; flex-shrink: 0; }
   /* 3D mascot via model-viewer */
   model-viewer.mascot-3d {
     width: 100%;
@@ -1085,11 +1085,13 @@
     --progress-bar-color: transparent;
     --progress-bar-height: 0;
     --progress-mask: transparent;
+    filter: drop-shadow(0 8px 14px rgba(20,22,28,0.22));
   }
-  /* Containers that hold a model-viewer need explicit size */
-  #mascot-svg-slot { width: 88px; height: 88px; display: block; }
-  #mascot-result   { width: 180px; height: 180px; margin: 20px auto 8px; display: block; }
-  .gate-mascot     { width: 180px; height: 180px; margin: 0 auto 18px; display: block; }
+  /* Containers that hold a model-viewer need explicit size.
+     3D characters need more pixels than 2D SVG to read clearly. */
+  #mascot-svg-slot { width: 130px; height: 130px; display: block; flex-shrink: 0; }
+  #mascot-result   { width: 220px; height: 220px; margin: 20px auto 8px; display: block; }
+  .gate-mascot     { width: 220px; height: 220px; margin: 0 auto 18px; display: block; }
   .speech-bubble {
     background: var(--surface);
     border: 1px solid var(--line);
@@ -1131,8 +1133,9 @@
     margin-top: 24px;
   }
   .gate-mascot {
-    width: 140px; height: 140px;
+    width: 220px; height: 220px;
     margin: 0 auto 18px;
+    display: block;
     filter: drop-shadow(0 8px 18px rgba(20,22,28,0.15));
   }
   .gate-title {
@@ -1848,28 +1851,32 @@ function screenLight(n, role) {
    call sites work unchanged.
    --------------------------------------------------------------- */
 function mingSvg(mood) {
+  // Camera-orbit syntax: [azimuth] [polar] [distance].
+  // Using "auto" for distance lets model-viewer auto-fit the bbox, so the
+  // whole figure stays in frame regardless of the GLB's actual scale.
   const moods = {
-    happy:   { orbit: "0deg 78deg 2.4m",   rotate: true,  speed: "18deg" },
-    scratch: { orbit: "35deg 80deg 2.5m",  rotate: false, speed: "0deg"  },
-    sleep:   { orbit: "0deg 95deg 2.6m",   rotate: false, speed: "0deg"  },
-    dance:   { orbit: "-20deg 70deg 2.2m", rotate: true,  speed: "65deg" },
+    happy:   { orbit: "0deg 78deg auto",   rotate: true,  speed: "16deg" },
+    scratch: { orbit: "30deg 80deg auto",  rotate: false, speed: "0deg"  },
+    sleep:   { orbit: "0deg 95deg auto",   rotate: false, speed: "0deg"  },
+    dance:   { orbit: "-25deg 72deg auto", rotate: true,  speed: "55deg" },
   };
   const m = moods[mood] || moods.happy;
-  const rot = m.rotate ? `auto-rotate rotation-per-second="${m.speed}"` : "";
+  const rot = m.rotate ? `auto-rotate auto-rotate-delay="0" rotation-per-second="${m.speed}"` : "";
   return `<model-viewer
       class="mascot-svg mascot-3d mascot-${mood || 'happy'}"
       src="./avatar.glb"
+      alt="Mascot"
       camera-orbit="${m.orbit}"
-      min-camera-orbit="auto auto 1.5m"
-      max-camera-orbit="auto auto 4m"
+      field-of-view="32deg"
       ${rot}
       interaction-prompt="none"
       disable-zoom
       disable-pan
       camera-controls
-      shadow-intensity="0.7"
-      shadow-softness="0.9"
-      exposure="1.05"
+      touch-action="pan-y"
+      shadow-intensity="0.6"
+      shadow-softness="1"
+      exposure="1.1"
       environment-image="neutral"
       loading="eager"
       reveal="auto"
