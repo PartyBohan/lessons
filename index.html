@@ -1902,6 +1902,22 @@ const RAINBOW_BY_PITCH_CLASS = [
 ];
 function rainbowColorFor(note) { return RAINBOW_BY_PITCH_CLASS[note % 12]; }
 
+/* ── Note-label equality across notation systems ──
+   T3 multiple-choice questions can have option labels in any of:
+   Western "C/D/E", jianpu "1/2/3", solfege "Do/Re/Mi". This helper
+   returns true if a given label matches a target MIDI pitch class
+   regardless of which system the label uses. */
+const SOLFEGE_NAMES = ["Do","#Do","Re","#Re","Mi","Fa","#Fa","Sol","#Sol","La","#La","Si"];
+function noteMatches(label, targetMidi) {
+  if (label == null) return false;
+  const pc = ((targetMidi % 12) + 12) % 12;
+  const norm = String(label).trim();
+  return norm === NOTE_NAMES[pc]
+      || norm === JIANPU_NAMES[pc]
+      || norm === SOLFEGE_NAMES[pc]
+      || norm.toLowerCase() === SOLFEGE_NAMES[pc].toLowerCase();
+}
+
 function buildKeyboard(container, lowOpt, highOpt) {
   const low = lowOpt || PK_LOW;    // default: PartyKeys full 36 keys (C3..B5)
   const high = highOpt || PK_HIGH;
@@ -2886,18 +2902,30 @@ function renderT3(slot, q) {
   card.querySelector(".q-body").appendChild(replayWrap);
   const grid = document.createElement("div");
   grid.className = "choice-grid";
-  const targetName = noteShort(q.target);
+  let answered = false;
+  function lockChoices() {
+    answered = true;
+    Array.from(grid.children).forEach(c => { c.disabled = true; c.style.pointerEvents = "none"; });
+  }
   q.choices.forEach(name => {
     const b = document.createElement("button");
     b.className = "choice-btn";
     b.textContent = name;
     b.addEventListener("click", () => {
-      if (name === targetName) {
+      if (answered) return;
+      // Match across Western/jianpu/solfege so the option label can be
+      // "Do" or "1" or "C" — whichever the lesson chose to display.
+      if (noteMatches(name, q.target)) {
         b.classList.add("correct");
+        lockChoices();
         onCorrect();
       } else {
         b.classList.add("wrong");
-        Array.from(grid.children).forEach(c => { if (c.textContent === targetName) c.classList.add("correct"); });
+        // also reveal the actual correct option (for learning)
+        Array.from(grid.children).forEach(c => {
+          if (noteMatches(c.textContent, q.target)) c.classList.add("correct");
+        });
+        lockChoices();
         onMissFinal(q);
       }
     });
