@@ -32,6 +32,9 @@
      The avatar GLB lives at ./avatar.glb (266 KB, gltf-transform-optimized). -->
 <script type="module" src="https://cdn.jsdelivr.net/npm/@google/model-viewer@3.5.0/dist/model-viewer.min.js"></script>
 
+<!-- VexFlow: SVG staff notation rendering. Used by 考级包 sight-read questions. -->
+<script src="https://cdn.jsdelivr.net/npm/vexflow@4.2.6/build/cjs/vexflow.js"></script>
+
 <style>
   /* ===========================================================
      1. DESIGN TOKENS — Duolingo green base, Apple Music depth,
@@ -298,11 +301,11 @@
      5. HOME / PATH MAP
      =========================================================== */
   #view-home { max-width: 540px; margin: 0 auto; }
-  /* Pack tabs — choose between Basic and Advanced lesson packs */
+  /* Pack tabs — choose between Basic / Advanced / Exam packs (3 cols) */
   .pack-tabs {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
     margin: 12px auto 6px;
   }
   .pack-tab {
@@ -331,14 +334,37 @@
     border-color: var(--purple-deep);
     box-shadow: 0 6px 20px rgba(165,96,232,0.3), inset 0 1px 0 rgba(255,255,255,0.4);
   }
-  .pack-tab-name { font-size: 16px; font-weight: 800; line-height: 1.2; }
-  .pack-tab-sub  { font-size: 11px; font-weight: 600; margin-top: 4px; opacity: 0.85; }
+  .pack-tab.on.pack-tab-exam {
+    background: linear-gradient(180deg, #4FC8FF 0%, var(--blue) 70%, var(--blue-deep) 100%);
+    color: white;
+    border-color: var(--blue-deep);
+    box-shadow: 0 6px 20px rgba(28,176,246,0.3), inset 0 1px 0 rgba(255,255,255,0.4);
+  }
+  .pack-tab-name { font-size: 15px; font-weight: 800; line-height: 1.2; }
+  .pack-tab-sub  { font-size: 10px; font-weight: 600; margin-top: 4px; opacity: 0.85; }
+  @media (max-width: 480px) {
+    .pack-tab { padding: 12px 8px; }
+    .pack-tab-name { font-size: 13px; }
+    .pack-tab-sub  { font-size: 9px; }
+  }
 
   /* Advanced pack module banner colors */
   .module-banner.ch1 { background: linear-gradient(135deg, #FF4B4B 0%, #D63838 100%); box-shadow: 0 4px 14px rgba(255,75,75,0.25); }
   .module-banner.ch2 { background: linear-gradient(135deg, #FFC800 0%, #E0AE00 100%); box-shadow: 0 4px 14px rgba(255,200,0,0.25); }
   .module-banner.ch3 { background: linear-gradient(135deg, #A560E8 0%, #823CC0 100%); box-shadow: 0 4px 14px rgba(165,96,232,0.25); }
   .module-banner.ch4 { background: linear-gradient(135deg, #1CB0F6 0%, #0E8FD0 100%); box-shadow: 0 4px 14px rgba(28,176,246,0.25); }
+  /* Exam pack 10 themed islands */
+  .module-banner.L1  { background: linear-gradient(135deg, #58CC02 0%, #3F9700 100%); }
+  .module-banner.L2  { background: linear-gradient(135deg, #1CB0F6 0%, #0E8FD0 100%); }
+  .module-banner.L3  { background: linear-gradient(135deg, #00D9A0 0%, #00A879 100%); }
+  .module-banner.L4  { background: linear-gradient(135deg, #FF9600 0%, #E07F00 100%); }
+  .module-banner.L5  { background: linear-gradient(135deg, #A560E8 0%, #823CC0 100%); }
+  .module-banner.L6  { background: linear-gradient(135deg, #FF4B4B 0%, #D63838 100%); }
+  .module-banner.L7  { background: linear-gradient(135deg, #FFC800 0%, #E0AE00 100%); color: #4a3200; }
+  .module-banner.L8  { background: linear-gradient(135deg, #FF5DBE 0%, #D8389A 100%); }
+  .module-banner.L9  { background: linear-gradient(135deg, #00CDB7 0%, #00A893 100%); }
+  .module-banner.L10 { background: linear-gradient(135deg, #2C2A4A 0%, #14122E 100%); border: 1px solid #FFC800; }
+  .module-banner.L7 .module-banner-icon { background: rgba(0,0,0,0.15); }
   .home-header {
     text-align: center;
     padding: 16px 0 8px;
@@ -807,6 +833,23 @@
   .key.lit-cyan    { background: linear-gradient(180deg, #50e0bd 0%, #20a785 50%, #137f60 100%) !important; color: white !important; box-shadow: inset 0 -3px 0 #084c39, inset 0 2px 8px rgba(140,240,220,0.85), 0 0 18px 2px rgba(19,127,96,0.8); }
   .key.lit-blue    { background: linear-gradient(180deg, #4080ff 0%, #1850c0 50%, #08307f 100%) !important; color: white !important; box-shadow: inset 0 -3px 0 #03194c, inset 0 2px 8px rgba(150,180,255,0.9), 0 0 18px 2px rgba(8,48,127,0.85); }
   .key.lit-purple  { background: linear-gradient(180deg, #b070ff 0%, #7728c0 50%, #4b007f 100%) !important; color: white !important; box-shadow: inset 0 -3px 0 #2c004c, inset 0 2px 8px rgba(210,160,255,0.9), 0 0 18px 2px rgba(75,0,127,0.85); }
+  /* Staff notation container — VexFlow renders an <svg> inside */
+  .staff-container {
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    padding: 8px 10px 4px;
+    margin: 12px auto 14px;
+    max-width: 620px;
+    overflow-x: auto;
+    box-shadow: var(--shadow-1);
+  }
+  .staff-container svg { display: block; max-width: 100%; height: auto; }
+  .staff-loading {
+    text-align: center; padding: 30px 12px;
+    color: var(--ink-3); font-size: 13px; font-weight: 600;
+  }
+
   /* Faint shortcut-key hint — for the "press C5 to continue" affordance.
      Lighter green than .lit-green and lower opacity so it reads as a
      suggestion rather than a target. Sends green LED 0x07 to hardware
@@ -1406,6 +1449,10 @@
       <div class="pack-tab-name"    data-i18n="pack_advanced">进阶包</div>
       <div class="pack-tab-sub"     data-i18n="pack_advanced_sub">80 关 · 音乐密码主线</div>
     </button>
+    <button class="pack-tab pack-tab-exam" data-pack="exam">
+      <div class="pack-tab-name"    data-i18n="pack_exam">考级包</div>
+      <div class="pack-tab-sub"     data-i18n="pack_exam_sub">60 关 · 钢琴 10 级</div>
+    </button>
   </div>
   <div id="path-container"></div>
 </section>
@@ -1505,6 +1552,7 @@ const DEFAULT_STATE = {
   progress: {
     basic:    { stars: {}, unlockedUpTo: "0.1" },
     advanced: { stars: {}, unlockedUpTo: "1.1.1" },
+    exam:     { stars: {}, unlockedUpTo: "1.1" },
   },
 };
 let state = loadState();
@@ -1514,6 +1562,7 @@ function loadState() {
     progress: {
       basic:    { stars: {}, unlockedUpTo: "0.1" },
       advanced: { stars: {}, unlockedUpTo: "1.1.1" },
+      exam:     { stars: {}, unlockedUpTo: "1.1" },
     },
   };
   try {
@@ -1531,9 +1580,10 @@ function loadState() {
       delete s.starsByLesson; delete s.unlockedUpTo;
     }
     // safety: ensure progress structure exists & both packs present
-    if (!s.progress) s.progress = { basic: { stars: {}, unlockedUpTo: "0.1" }, advanced: { stars: {}, unlockedUpTo: "1.1.1" } };
+    if (!s.progress) s.progress = { basic: { stars: {}, unlockedUpTo: "0.1" }, advanced: { stars: {}, unlockedUpTo: "1.1.1" }, exam: { stars: {}, unlockedUpTo: "1.1" } };
     if (!s.progress.basic)    s.progress.basic    = { stars: {}, unlockedUpTo: "0.1" };
     if (!s.progress.advanced) s.progress.advanced = { stars: {}, unlockedUpTo: "1.1.1" };
+    if (!s.progress.exam)     s.progress.exam     = { stars: {}, unlockedUpTo: "1.1" };
     if (!s.activePack) s.activePack = "basic";
     return s;
   } catch (e) { return s; }
@@ -1571,10 +1621,22 @@ const DICT = {
   module_ch2:   { zh: "第二章 · 指法技巧", en: "Ch.2 · Fingering" },
   module_ch3:   { zh: "第三章 · 和弦弹唱", en: "Ch.3 · Chords" },
   module_ch4:   { zh: "第四章 · 双手合奏", en: "Ch.4 · Two Hands" },
+  module_L1:    { zh: "Lv 1 · 键盘岛",       en: "Lv 1 · Keyboard Island" },
+  module_L2:    { zh: "Lv 2 · 双手岛",       en: "Lv 2 · Two-Hand Island" },
+  module_L3:    { zh: "Lv 3 · 音阶森林",     en: "Lv 3 · Scale Forest" },
+  module_L4:    { zh: "Lv 4 · 节奏山谷",     en: "Lv 4 · Rhythm Valley" },
+  module_L5:    { zh: "Lv 5 · 表现城堡",     en: "Lv 5 · Expression Castle" },
+  module_L6:    { zh: "Lv 6 · 技术峡谷",     en: "Lv 6 · Technique Canyon" },
+  module_L7:    { zh: "Lv 7 · 高级调性大陆", en: "Lv 7 · Advanced Tonality" },
+  module_L8:    { zh: "Lv 8 · 舞台之城",     en: "Lv 8 · Stage City" },
+  module_L9:    { zh: "Lv 9 · 解释学院",     en: "Lv 9 · Interpretation" },
+  module_L10:   { zh: "Lv 10 · 大师考场",    en: "Lv 10 · Master Exam" },
   pack_basic:   { zh: "基础课", en: "Basics" },
   pack_advanced:{ zh: "进阶包", en: "Advanced" },
-  pack_basic_sub:    { zh: "7 关 · 多邻国基础", en: "7 lessons · Duo basics" },
+  pack_exam:    { zh: "考级包", en: "Exam Prep" },
+  pack_basic_sub:    { zh: "7 关 · 多邻国基础",    en: "7 lessons · Duo basics" },
   pack_advanced_sub: { zh: "80 关 · 音乐密码主线", en: "80 lessons · Music Code" },
+  pack_exam_sub:     { zh: "60 关 · 钢琴 10 级",   en: "60 lessons · Piano L1-10" },
   shortcut_continue: {
     zh: '或弹一下高音 <span class="kbd">Do</span> 继续',
     en: 'or play high <span class="kbd">Do</span> to continue',
@@ -1987,6 +2049,135 @@ const RAINBOW_BY_PITCH_CLASS = [
   "purple",  // 11 B  Si
 ];
 function rainbowColorFor(note) { return RAINBOW_BY_PITCH_CLASS[note % 12]; }
+
+/* ============================================================
+   STAFF NOTATION (VexFlow) — used by 考级包
+   ============================================================ */
+const VEX_PITCH = ["c","c#","d","d#","e","f","f#","g","g#","a","a#","b"];
+const SHARP_PCS = new Set([1, 3, 6, 8, 10]);
+function midiToVexKey(m) {
+  const pc = ((m % 12) + 12) % 12;
+  const oct = Math.floor(m / 12 - 1);   // C4=60 → oct 4
+  return VEX_PITCH[pc] + "/" + oct;
+}
+function isVexReady() { return !!(window.Vex && window.Vex.Flow); }
+function whenVexReady(cb) {
+  if (isVexReady()) return cb();
+  let tries = 0;
+  const tick = () => {
+    if (isVexReady()) cb();
+    else if (tries++ < 100) setTimeout(tick, 80);
+  };
+  tick();
+}
+
+/* Render a one-line treble staff (or grand staff if grand=true).
+   Returns a controller { highlight(idx, color), clear() }. */
+function renderStaff(container, midiArray, opts) {
+  opts = opts || {};
+  const grand = !!opts.grand;
+  const clef = opts.clef || (grand ? null : "treble");
+  container.innerHTML = "";
+  const placeholder = document.createElement("div");
+  placeholder.className = "staff-loading";
+  placeholder.textContent = state.lang === "zh" ? "正在加载五线谱…" : "Loading staff…";
+  container.appendChild(placeholder);
+  const ctrl = {
+    _notes: [],
+    highlight(idx, color) {
+      const n = this._notes[idx];
+      if (!n) return;
+      const el = n.getSVGElement && n.getSVGElement();
+      if (!el) return;
+      el.style.fill   = color || "#58CC02";
+      el.style.stroke = color || "#58CC02";
+      el.querySelectorAll("path,rect").forEach(p => {
+        p.style.fill   = color || "#58CC02";
+        p.style.stroke = color || "#58CC02";
+      });
+    },
+    clear() {
+      this._notes.forEach((n, i) => {
+        const el = n.getSVGElement && n.getSVGElement();
+        if (!el) return;
+        el.style.fill = ""; el.style.stroke = "";
+        el.querySelectorAll("path,rect").forEach(p => { p.style.fill=""; p.style.stroke=""; });
+      });
+    },
+  };
+  whenVexReady(() => {
+    container.innerHTML = "";
+    const VF = Vex.Flow;
+    const w = Math.max(360, container.clientWidth || 480);
+    const h = grand ? 220 : 130;
+    const renderer = new VF.Renderer(container, VF.Renderer.Backends.SVG);
+    renderer.resize(w, h);
+    const ctx = renderer.getContext();
+    ctx.setFont("system-ui", 11);
+
+    // Build per-note objects, splitting by clef if grand staff
+    const items = midiArray.map(m => {
+      const midi = (typeof m === "object") ? m.midi : m;
+      const dur  = (typeof m === "object" && m.dur) ? m.dur : "q";
+      const useBass = grand && midi < 60;       // middle C as split point
+      const usedClef = clef || (useBass ? "bass" : "treble");
+      const note = new VF.StaveNote({
+        keys: [midiToVexKey(midi)],
+        duration: dur,
+        clef: usedClef,
+      });
+      if (SHARP_PCS.has(((midi % 12)+12)%12)) {
+        note.addModifier(new VF.Accidental("#"));
+      }
+      return { midi, note, clef: usedClef };
+    });
+
+    function durToBeats(d) { return d === "w" ? 4 : d === "h" ? 2 : d === "8" ? 0.5 : d === "16" ? 0.25 : 1; }
+    const totalBeats = midiArray.reduce((s, m) => s + durToBeats((typeof m === "object" && m.dur) ? m.dur : "q"), 0);
+
+    function buildVoice(notes) {
+      const voice = new VF.Voice({ num_beats: Math.max(4, Math.ceil(totalBeats)), beat_value: 4 });
+      voice.setStrict(false);
+      voice.addTickables(notes);
+      return voice;
+    }
+
+    if (grand) {
+      const treble = new VF.Stave(10, 0,   w - 20).addClef("treble");
+      const bass   = new VF.Stave(10, 90,  w - 20).addClef("bass");
+      treble.setContext(ctx).draw();
+      bass.setContext(ctx).draw();
+      const trebleNotes = items.filter(it => it.clef === "treble").map(it => it.note);
+      const bassNotes   = items.filter(it => it.clef === "bass").map(it => it.note);
+      // pad rest if empty
+      if (trebleNotes.length === 0) trebleNotes.push(new VF.StaveNote({keys:["b/4"], duration:"wr"}));
+      if (bassNotes.length === 0)   bassNotes.push(new VF.StaveNote({keys:["d/3"], duration:"wr"}));
+      const voiceT = buildVoice(trebleNotes);
+      const voiceB = buildVoice(bassNotes);
+      new VF.Formatter().joinVoices([voiceT]).joinVoices([voiceB]).format([voiceT, voiceB], w - 80);
+      voiceT.draw(ctx, treble);
+      voiceB.draw(ctx, bass);
+      // Brace + connectors for grand staff
+      const brace     = new VF.StaveConnector(treble, bass).setType(3);
+      const conLine   = new VF.StaveConnector(treble, bass).setType(1);
+      brace.setContext(ctx).draw();
+      conLine.setContext(ctx).draw();
+    } else {
+      const stave = new VF.Stave(10, 10, w - 20);
+      stave.addClef(usedDefaultClef());
+      if (opts.timeSig) stave.addTimeSignature(opts.timeSig);
+      stave.setContext(ctx).draw();
+      const notes = items.map(it => it.note);
+      const voice = buildVoice(notes);
+      new VF.Formatter().joinVoices([voice]).format([voice], w - 80);
+      voice.draw(ctx, stave);
+    }
+    function usedDefaultClef() { return clef || "treble"; }
+    ctrl._notes = items.map(it => it.note);
+    container._staffCtrl = ctrl;
+  });
+  return ctrl;
+}
 
 /* ── Note-label equality across notation systems ──
    T3 multiple-choice questions can have option labels in any of:
@@ -2563,6 +2754,289 @@ const ADVANCED_MODULES = [
 ];
 
 /* ============================================================
+   7d) EXAM PACK — 钢琴考级十级 (60 lessons)
+        10 levels (themed islands) × 5 units + 1 Boss = 60.
+        UI focus: VexFlow staff notation + LED guidance.
+        Boss pieces use only public-domain classical music.
+   ============================================================ */
+// Helpers — readable shorthand for staff-note durations
+const Q = "q", H = "h", W = "w", E = "8", S = "16";
+function ex(id, lvl, zh, en, blurbZh, blurbEn, qs, isBoss, bossXp) {
+  return {
+    id, module: lvl,
+    title: { zh, en },
+    intro: { kid:   { zh: blurbZh, en: blurbEn || blurbZh },
+             adult: { zh: blurbZh, en: blurbEn || blurbZh } },
+    questions: qs,
+    isBoss: !!isBoss,
+    bossXp: bossXp || (isBoss ? 35 : 14),
+  };
+}
+const stf      = (seq, label, opts) => Object.assign({ type: "T_STAFF", sequence: seq, label }, opts || {});
+const stfGrand = (seq, label, opts) => Object.assign({ type: "T_STAFF", sequence: seq, label, grand: true }, opts || {});
+
+// Public-domain melody snippets (MIDI). All > 100 years old.
+const MEL = {
+  twinkle:    [60,60,67,67,69,69,67, 65,65,64,64,62,62,60],          // Twinkle (Mozart variations)
+  mary:       [64,62,60,62,64,64,64, 62,62,62, 64,67,67],            // Mary had a little lamb
+  ode:        [64,64,65,67,67,65,64,62, 60,60,62,64, 64,62,62],      // Ode to Joy (Beethoven)
+  birthday:   [67,67,69,67,72,71, 67,67,69,67,74,72],                // Happy Birthday (now PD)
+  czerny599:  [60,62,64,65,67,65,64,62,60],                          // Czerny Op.599 No.1 simplified
+  bachMinG:   [67,72,74,76,72, 76,77,79, 76,74,72,71,72,74,72],      // Bach Minuet in G Anh.114 (R.H. opening)
+  mozartKV6:  [72,76,79,76, 72,74,76,77,79],                         // Mozart KV6 (Allegro opening)
+  bagatelle:  [60,64,67,72, 71,67,64, 65,69,72,77,76],               // Beethoven Bagatelle Op.119 simplified
+  chopin7:    [69,73,76,73,69, 71,73,76,71],                         // Chopin Prelude Op.28 No.7 in A
+  bach846:    [60,64,67,72,76, 60,64,67,72,76],                      // Bach Prelude in C BWV 846 (arpeggio)
+  invention1: [60,62,64,65,62,64,60, 67,69,71,72],                   // Bach Invention No.1 simplified
+};
+
+const EXAM_LESSONS = [
+  /* ─── Level 1 · 键盘岛 ─── */
+  ex("1.1","L1","找到中央 C","Find Middle C",
+    "中央 C 是钢琴正中间那个 Do 🎹","Middle C is the center key (C4).",
+    [{type:"T1",target:60},{type:"T1",target:60},
+     {type:"T3",target:60,choices:["C","D","E","F"]},
+     stf([60,60,60], "中央 C × 3")]),
+  ex("1.2","L1","高音谱号 C-D-E","Treble C-D-E",
+    "学会五线谱上的 Do Re Mi 📖","Read C-D-E on the treble staff.",
+    [stf([60,62,64], "C D E"), stf([64,62,60], "下行"),
+     {type:"T1",target:62},{type:"T1",target:64}]),
+  ex("1.3","L1","高音谱号 F-G-A-B","Treble F-G-A-B",
+    "认识高音谱里的高音 Do Re Mi","Higher whites on treble staff.",
+    [stf([65,67,69,71], "F G A B"),
+     {type:"T1",target:65},{type:"T1",target:67},{type:"T1",target:69}]),
+  ex("1.4","L1","基础节奏 4/4","4/4 basic rhythm",
+    "听节拍器，弹四分音符 ⏱️","Quarter notes with metronome.",
+    [stf([{midi:60,dur:Q},{midi:60,dur:Q},{midi:60,dur:Q},{midi:60,dur:Q}], "Do × 4 (4/4)"),
+     stf([60,62,64,65], "C D E F 4 拍")]),
+  ex("1.5","L1","右手五指练习","Right-hand 5 fingers",
+    "用 5 根手指依次弹 1-5","Five fingers play 1-2-3-4-5.",
+    [stf([60,62,64,65,67], "C-D-E-F-G 上行"),
+     stf([67,65,64,62,60], "G-F-E-D-C 下行"),
+     stf([60,64,67,64,60], "1-3-5-3-1")]),
+  ex("1.6","L1","★ 玛丽有只小羊","★ Mary had a little lamb",
+    "Boss：完整弹一遍《玛丽有只小羊》⭐","Boss: play Mary had a little lamb.",
+    [stf(MEL.mary.slice(0,7), "玛丽 1"), stf(MEL.mary, "玛丽 完整版")], true, 40),
+
+  /* ─── Level 2 · 双手岛 ─── */
+  ex("2.1","L2","双手同向五指","Hands together (parallel)",
+    "左右手一起向上 / 向下 走 5 个音 🤝","Both hands move in parallel.",
+    [stfGrand([60,62,64,65,67], "右手 12345 上行"),
+     stfGrand([60,62,64,65,67,65,64,62,60], "右手往返")]),
+  ex("2.2","L2","左手单音伴奏","Left-hand single notes",
+    "左手弹根音 🔊","Left hand plays bass roots.",
+    [{type:"T1",target:48},{type:"T1",target:53},{type:"T1",target:55},
+     stfGrand([{midi:48,dur:H},{midi:55,dur:H},{midi:48,dur:H}], "C-G-C 根音")]),
+  ex("2.3","L2","C-G 简单伴奏","C-G accompaniment",
+    "右手旋律 + 左手 C 和 G 交替","Right melody + alternating C/G bass.",
+    [stf([60,64,67,64], "右手 1-3-5-3"),
+     stfGrand([{midi:48,dur:H},{midi:55,dur:H}], "左手 C-G")]),
+  ex("2.4","L2","八分音符","Eighth notes",
+    "一拍弹两下 ⚡","Two notes per beat.",
+    [stf([{midi:60,dur:E},{midi:62,dur:E},{midi:64,dur:E},{midi:65,dur:E},{midi:67,dur:E},{midi:65,dur:E},{midi:64,dur:E},{midi:62,dur:E}], "8 分上下")]),
+  ex("2.5","L2","乐句呼吸","Phrasing",
+    "学会一句话一样地弹音乐 🎵","Phrase the music like speech.",
+    [stf([60,64,67,72,67,64,60], "1-3-5-1-5-3-1 呼吸")]),
+  ex("2.6","L2","★ 欢乐颂","★ Ode to Joy",
+    "Boss：完整《欢乐颂》⭐","Boss: full Ode to Joy.",
+    [stf(MEL.ode.slice(0,8), "欢乐颂 上半句"),
+     stf(MEL.ode, "欢乐颂 完整")], true, 50),
+
+  /* ─── Level 3 · 音阶森林 ─── */
+  ex("3.1","L3","C 大调音阶","C major scale",
+    "8 个白键全速通过 🌲","All 8 whites in C major.",
+    [stf([60,62,64,65,67,69,71,72], "C 大调上行"),
+     stf([72,71,69,67,65,64,62,60], "C 大调下行")]),
+  ex("3.2","L3","G 大调入门","G major (1 sharp)",
+    "G 大调有一个升号 #F","G major has F#.",
+    [stf([67,69,71,72,74,76,78,79], "G 大调上行"),
+     {type:"T3",target:78,choices:["F","F#","G","G#"]}]),
+  ex("3.3","L3","F 大调入门","F major (1 flat)",
+    "F 大调有一个降号 ♭B","F major has Bb.",
+    [stf([65,67,69,70,72,74,76,77], "F 大调上行"),
+     {type:"T3",target:70,choices:["A","A#","B","Bb"]}]),
+  ex("3.4","L3","a 小调","A minor",
+    "C 大调的关系小调 🌑","Relative minor of C major.",
+    [stf([57,59,60,62,64,65,67,69], "a 自然小调"),
+     {type:"T3",target:60,choices:["C major","A minor","G major","F major"]}]),
+  ex("3.5","L3","简单琶音","Basic arpeggios",
+    "C-F-G 三和弦琶音 🎶","C-F-G chord arpeggios.",
+    [stf([60,64,67,72], "C 琶音"),
+     stf([65,69,72,77], "F 琶音"),
+     stf([67,71,74,79], "G 琶音")]),
+  ex("3.6","L3","★ Czerny Op.599","★ Czerny etude",
+    "Boss：Czerny 第一首练习曲 ⭐","Boss: Czerny Op.599 No.1.",
+    [stf(MEL.czerny599, "Czerny 上行片段"),
+     stf([60,64,65,67,69,67,65,64,62,60], "Czerny 完整片段")], true, 55),
+
+  /* ─── Level 4 · 节奏山谷 ─── */
+  ex("4.1","L4","三连音","Triplets",
+    "一拍弹三下 🌊","Three notes per beat.",
+    [stf([{midi:60,dur:E},{midi:62,dur:E},{midi:64,dur:E},{midi:60,dur:Q}], "三连音入门")]),
+  ex("4.2","L4","附点音符","Dotted notes",
+    "1.5 + 0.5 拍 ⏳","1.5 + 0.5 beat split.",
+    [stf([{midi:60,dur:H},{midi:62,dur:Q},{midi:64,dur:Q}], "附点节奏"),
+     stf([{midi:67,dur:H},{midi:65,dur:Q},{midi:64,dur:Q}], "附点 2")]),
+  ex("4.3","L4","D 大调","D major (2 sharps)",
+    "D 大调：#F #C","D major: F# C#.",
+    [stf([62,64,66,67,69,71,73,74], "D 大调上行"),
+     {type:"T3",target:66,choices:["F","F#","G","G#"]}]),
+  ex("4.4","L4","降 B 大调","Bb major (2 flats)",
+    "降 B 大调：♭B ♭E","Bb major: Bb Eb.",
+    [stf([58,60,62,63,65,67,69,70], "B♭ 大调上行")]),
+  ex("4.5","L4","跨指换指","Thumb under / cross",
+    "音阶的拇指穿过技巧 🤚","Thumb-under technique.",
+    [stf([60,62,64,65,67,69,71,72], "C 大调 1-3-1-2-3-4-5"),
+     stf([72,71,69,67,65,64,62,60], "下行换指")]),
+  ex("4.6","L4","★ Bach Minuet in G","★ Bach G Minuet",
+    "Boss：Bach 小步舞曲 G 大调 ⭐","Boss: Bach Minuet in G (Anh.114).",
+    [stf(MEL.bachMinG.slice(0,7), "Bach 小步舞 1"),
+     stf(MEL.bachMinG, "Bach 小步舞 完整片段")], true, 60),
+
+  /* ─── Level 5 · 表现城堡 ─── */
+  ex("5.1","L5","强弱记号","Dynamics p / f",
+    "p 弱 / f 强 🔉","p = soft, f = loud.",
+    [{type:"T3",target:60,choices:["pp","p","mf","f"]},
+     stf([60,64,67,64,60], "试一下 p → f")]),
+  ex("5.2","L5","渐强渐弱","Crescendo / decrescendo",
+    "音量像波浪一样起伏 🌊","Volume swells.",
+    [stf([60,62,64,65,67], "渐强 5 音"),
+     stf([67,65,64,62,60], "渐弱 5 音")]),
+  ex("5.3","L5","巴洛克二部入门","Two-voice baroque",
+    "左右手各唱一句 🎶","Each hand sings a voice.",
+    [stfGrand([60,64,67,72, 60,64,67,72], "二部入门")]),
+  ex("5.4","L5","莫扎特小步舞","Mozart minuet",
+    "莫扎特风格的优雅 🌸","Mozartean grace.",
+    [stf(MEL.mozartKV6.slice(0,5), "Mozart 1"),
+     stf(MEL.mozartKV6, "Mozart 完整片段")]),
+  ex("5.5","L5","连音断音","Legato vs staccato",
+    "连音粘连，断音跳跃","Legato connected, staccato jumpy.",
+    [stf([60,62,64,65,67], "legato 上行"),
+     stf([{midi:60,dur:E},{midi:62,dur:E},{midi:64,dur:E},{midi:65,dur:E}], "staccato 跳音")]),
+  ex("5.6","L5","★ Mozart KV6","★ Mozart KV6 Allegro",
+    "Boss：Mozart KV6 一段 ⭐","Boss: Mozart KV6.",
+    [stf(MEL.mozartKV6, "Mozart KV6 完整")], true, 65),
+
+  /* ─── Level 6 · 技术峡谷 ─── */
+  ex("6.1","L6","八度跳跃","Octave leaps",
+    "1 → 高 1 大跳 🌉","Octave leaps.",
+    [stf([60,72,60,72,60], "C 八度跳"),
+     stf([67,79,67,79], "G 八度跳")]),
+  ex("6.2","L6","半音阶","Chromatic scale",
+    "黑白键全部依次弹 🎹","All 12 semitones.",
+    [stf([60,61,62,63,64,65,66,67], "半音阶 8 音")]),
+  ex("6.3","L6","转调入门","Modulation",
+    "从一个调转到另一个 🚉","Modulate between keys.",
+    [stf([60,62,64,65,67, 67,69,71,72,74], "C → G 转调")]),
+  ex("6.4","L6","巴洛克风格","Baroque style",
+    "对位 + 装饰 🎼","Counterpoint + ornaments.",
+    [stf(MEL.invention1.slice(0,7), "巴赫风格 1")]),
+  ex("6.5","L6","速度提升","Tempo up",
+    "60 → 80 → 100 BPM","60 → 80 → 100 BPM.",
+    [stf([60,62,64,65,67,69,71,72], "提速 C 大调")]),
+  ex("6.6","L6","★ Bach Invention","★ Bach Invention No.1",
+    "Boss：巴赫二部创意曲简化 ⭐","Boss: Bach Invention 1 (simplified).",
+    [stf(MEL.invention1, "Bach Invention 完整片段")], true, 70),
+
+  /* ─── Level 7 · 高级调性大陆 ─── */
+  ex("7.1","L7","升 C 大调","C# major",
+    "5 个升号 #F #C #G #D #A","5 sharps.",
+    [stf([61,63,65,66,68,70,72,73], "C# 大调 8 音")]),
+  ex("7.2","L7","降 D 大调","Db major",
+    "5 个降号 ♭B ♭E ♭A ♭D ♭G","5 flats.",
+    [stf([61,63,65,66,68,70,72,73], "D♭ 大调 8 音")]),
+  ex("7.3","L7","复杂复调","Complex polyphony",
+    "三声部独立 🎭","Three voices.",
+    [stfGrand([60,64,67, 72,76,79], "三声部入门")]),
+  ex("7.4","L7","浪漫派抒情","Romantic lyricism",
+    "肖邦 / 舒曼风格 💝","Chopin / Schumann.",
+    [stf(MEL.chopin7.slice(0,5), "Chopin 风格 1"),
+     stf(MEL.chopin7, "Chopin 风格 完整")]),
+  ex("7.5","L7","印象派和声","Impressionist colors",
+    "德彪西的色彩 🎨","Debussy colors.",
+    [{type:"T3",target:60,choices:["大三","小三","属七","减七"]},
+     stf([60,64,68,72], "增和弦色")]),
+  ex("7.6","L7","★ Beethoven Sonatina","★ Beethoven Sonatina",
+    "Boss：贝多芬奏鸣曲简化片段 ⭐","Boss: Beethoven simplified.",
+    [stf([67,72,76,72, 71,72,76,79], "Beethoven 风格")], true, 75),
+
+  /* ─── Level 8 · 舞台之城 ─── */
+  ex("8.1","L8","速度记号","Tempo markings",
+    "Allegro / Andante / Adagio","Italian tempo terms.",
+    [{type:"T3",target:60,choices:["Allegro","Andante","Adagio","Presto"]}]),
+  ex("8.2","L8","装饰音","Ornaments",
+    "颤音 / 倚音 / 回音 ✨","Trills, mordents, turns.",
+    [stf([60,62,60,62,60, 64], "倚音模拟")]),
+  ex("8.3","L8","跳音连音对比","Articulation contrast",
+    "同一段两种弹法 🎯","Same passage, two articulations.",
+    [stf([60,64,67,72], "legato"),
+     stf([{midi:60,dur:E},{midi:64,dur:E},{midi:67,dur:E},{midi:72,dur:E}], "staccato 同音")]),
+  ex("8.4","L8","古典奏鸣曲式","Classical sonata form",
+    "呈示部主题 🏛️","Sonata exposition.",
+    [stfGrand(MEL.bagatelle.slice(0,8), "Bagatelle 主题")]),
+  ex("8.5","L8","Rubato","Rubato",
+    "节奏弹性 ⏱️","Tempo flexibility.",
+    [stf([67,69,71,72,71,69,67], "rubato 7 音")]),
+  ex("8.6","L8","★ Beethoven Bagatelle","★ Beethoven Bagatelle",
+    "Boss：贝多芬小品 Op.119 简化 ⭐","Boss: Bagatelle Op.119.",
+    [stf(MEL.bagatelle, "Bagatelle 完整片段")], true, 80),
+
+  /* ─── Level 9 · 音乐解释学院 ─── */
+  ex("9.1","L9","风格判断","Style ID",
+    "听一段判断风格","Identify the style.",
+    [{type:"T3",target:60,choices:["巴洛克","古典","浪漫","印象"]}]),
+  ex("9.2","L9","多声部听写","Multi-voice dictation",
+    "听 + 弹 + 记 🎧","Listen, play, transcribe.",
+    [stfGrand([60,64, 67,72], "二部听写")]),
+  ex("9.3","L9","转调挑战","Modulation challenge",
+    "C → G → D 远关系转调 🌍","C → G → D modulation.",
+    [stf([60,62,64,65,67,67,69,71,72,74,74,76,78], "三调转换")]),
+  ex("9.4","L9","复杂节奏","Complex rhythms",
+    "5/8 / 6/8 / 复合拍 🌀","5/8, 6/8, compound meters.",
+    [stf([{midi:60,dur:E},{midi:62,dur:E},{midi:64,dur:E},{midi:65,dur:Q}], "5/8 节奏")]),
+  ex("9.5","L9","浪漫派表达","Romantic expression",
+    "情感 + 自由 + 力度 💖","Emotion + freedom + power.",
+    [stf(MEL.chopin7, "Chopin 完整版")]),
+  ex("9.6","L9","★ Chopin Prelude","★ Chopin Prelude Op.28 No.7",
+    "Boss：肖邦前奏曲 A 大调 ⭐","Boss: Chopin Op.28 No.7 in A.",
+    [stf(MEL.chopin7, "肖邦 完整")], true, 90),
+
+  /* ─── Level 10 · 大师考场 ─── */
+  ex("10.1","L10","大型作品片段","Large work fragment",
+    "巴赫平均律 BWV 846 入门","Bach WTC BWV 846 intro.",
+    [stf(MEL.bach846.slice(0,5), "BWV 846 起始")]),
+  ex("10.2","L10","赋格初级","Fugue intro",
+    "三主题入声 🎭","Three-voice fugue intro.",
+    [stfGrand([60,64,67,72,76,79], "赋格入声")]),
+  ex("10.3","L10","古典奏鸣曲","Classical sonata",
+    "完整呈示部 + 展开部 🏛️","Full exposition + development.",
+    [stfGrand([60,64,67,72,71,67,64,60, 67,71,74,79], "奏鸣曲式")]),
+  ex("10.4","L10","浪漫小品","Romantic miniature",
+    "肖邦 / 李斯特风格 🌹","Chopin / Liszt style.",
+    [stf([69,73,76,73,69,71,73,76,71,69], "浪漫主题")]),
+  ex("10.5","L10","模拟考前打磨","Mock exam polish",
+    "把所有技术整合一遍 💎","Final polish.",
+    [stfGrand(MEL.bach846, "BWV 846 完整")]),
+  ex("10.6","L10","🏆 Bach BWV 846 全曲","🏆 Bach BWV 846 full",
+    "Final Boss：巴赫平均律 C 大调前奏曲 ⭐⭐⭐","Final boss: Bach WTC Prelude in C.",
+    [stf(MEL.bach846, "BWV 846 第 1 段"),
+     stf([60,64,67,72,76, 60,64,67,72,76, 60,62,69,72,77], "BWV 846 第 2 段")], true, 150),
+];
+
+const EXAM_MODULES = [
+  { id: "L1",  labelKey: "module_L1",  color: "green",       open: true },
+  { id: "L2",  labelKey: "module_L2",  color: "blue",        open: true },
+  { id: "L3",  labelKey: "module_L3",  color: "emerald",     open: true },
+  { id: "L4",  labelKey: "module_L4",  color: "orange",      open: true },
+  { id: "L5",  labelKey: "module_L5",  color: "purple",      open: true },
+  { id: "L6",  labelKey: "module_L6",  color: "red",         open: true },
+  { id: "L7",  labelKey: "module_L7",  color: "yellow",      open: true },
+  { id: "L8",  labelKey: "module_L8",  color: "magenta",     open: true },
+  { id: "L9",  labelKey: "module_L9",  color: "teal",        open: true },
+  { id: "L10", labelKey: "module_L10", color: "gold",        open: true },
+];
+
+/* ============================================================
    7c) PACK REGISTRY
    ============================================================ */
 const PACKS = {
@@ -2585,6 +3059,16 @@ const PACKS = {
     modules: ADVANCED_MODULES,
     noteStyle:   "jianpu",    // 1234567 + octave dots
     colorScheme: "rainbow",   // Do=red, Re=orange, etc.
+  },
+  exam: {
+    id: "exam",
+    title:    { zh: "考级包", en: "Exam Prep" },
+    subtitle: { zh: "钢琴考级 · 10 级", en: "Piano Exam · 10 Levels" },
+    color: "blue",
+    lessons: EXAM_LESSONS,
+    modules: EXAM_MODULES,
+    noteStyle:   "western",   // staff displays note names natively
+    colorScheme: "role",      // green = play this; standard role colors
   },
 };
 
@@ -2883,6 +3367,7 @@ function renderQuestion() {
   else if (q.type === "T3") renderT3(slot, q);
   else if (q.type === "T7") renderT7(slot, q);
   else if (q.type === "T8") renderT8(slot, q);
+  else if (q.type === "T_STAFF") renderT_STAFF(slot, q);
 }
 
 function questionCard(title, prompt, tip) {
@@ -3202,6 +3687,73 @@ function renderT8(slot, q) {
   }
   replay.addEventListener("click", demo);
   setTimeout(demo, 600);
+}
+
+/* ---------- T_STAFF: sight-read from notation ----------
+   Show a 1-line treble (or grand) staff with N notes. The note user
+   should play is highlighted green on the staff AND lit on the
+   keyboard via LED. Wrong key → red flash on staff & keyboard.
+   On correct key, advance to next note. */
+function renderT_STAFF(slot, q) {
+  const tip = q.tip ? (typeof q.tip === "string" ? q.tip : q.tip[state.lang] || q.tip.zh) : null;
+  const card = questionCard(
+    state.lang === "zh" ? "看谱弹琴" : "Sight-read the staff",
+    q.label || (state.lang === "zh" ? "按谱面顺序弹奏" : "Play the notes in order"),
+    tip);
+  slot.appendChild(card);
+  const staffWrap = document.createElement("div");
+  staffWrap.className = "staff-container";
+  card.querySelector(".q-body").appendChild(staffWrap);
+  const kbWrap = document.createElement("div");
+  buildKeyboard(kbWrap, PK_LOW, PK_HIGH);
+  card.querySelector(".q-body").appendChild(kbWrap);
+
+  const staff = renderStaff(staffWrap, q.sequence, { grand: !!q.grand });
+  let idx = 0, errors = 0;
+
+  function highlightCurrent() {
+    if (idx > 0) staff.highlight(idx - 1, "#7d8794");                     // played note: dim grey
+    if (idx < q.sequence.length) {
+      staff.highlight(idx, "#58CC02");                                    // current: green
+      const m = (typeof q.sequence[idx] === "object") ? q.sequence[idx].midi : q.sequence[idx];
+      led(m, "target");
+    }
+  }
+  function arm() {
+    onMidiNote = (note, vel, isOn) => {
+      if (!isOn) return;
+      const expM = (typeof q.sequence[idx] === "object") ? q.sequence[idx].midi : q.sequence[idx];
+      if (note === expM) {
+        ledOff(note);
+        idx++;
+        highlightCurrent();
+        if (idx >= q.sequence.length) {
+          onMidiNote = null;
+          if (errors === 0) session.perfect = true;
+          onCorrect();
+        }
+      } else {
+        errors++;
+        led(note, "wrong");
+        setTimeout(() => ledOff(note), 300);
+        if (state.tone === "kid" && errors >= 4) {
+          onMidiNote = null;
+          showMascot(toned({ kid: DICT.ming_demo_kid, adult: DICT.ming_demo_adult }), "scratch", 2200);
+          // demo: walk through highlighting & playing each note
+          setTimeout(() => {
+            staff.clear(); idx = 0;
+            q.sequence.forEach((s, i) => {
+              const m = (typeof s === "object") ? s.midi : s;
+              setTimeout(() => { led(m, "target"); playNote(m, 0.5); setTimeout(() => ledOff(m), 380); }, i * 600);
+            });
+            setTimeout(() => { idx = 0; errors = 0; staff.clear(); highlightCurrent(); arm(); }, q.sequence.length * 600 + 500);
+          }, 1500);
+        }
+      }
+    };
+  }
+  // small lead-in pause so user can read staff first
+  setTimeout(() => { highlightCurrent(); arm(); }, 600);
 }
 
 /* ============================================================
