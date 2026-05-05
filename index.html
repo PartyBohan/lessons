@@ -32,8 +32,10 @@
      The avatar GLB lives at ./avatar.glb (266 KB, gltf-transform-optimized). -->
 <script type="module" src="https://cdn.jsdelivr.net/npm/@google/model-viewer@3.5.0/dist/model-viewer.min.js"></script>
 
-<!-- VexFlow: SVG staff notation rendering. Used by 考级包 sight-read questions. -->
-<script src="https://cdn.jsdelivr.net/npm/vexflow@4.2.6/build/cjs/vexflow.js"></script>
+<!-- VexFlow: SVG staff notation rendering. Used by 考级包 sight-read questions.
+     v3 has the simplest globals (Vex.Flow.* exposed directly via UMD bundle). -->
+<script src="https://cdn.jsdelivr.net/npm/vexflow@3.0.9/releases/vexflow-min.js"
+        onerror="this.onerror=null;this.src='https://unpkg.com/vexflow@3.0.9/releases/vexflow-min.js';"></script>
 
 <style>
   /* ===========================================================
@@ -1765,6 +1767,22 @@ function scanMidi() {
   }
 }
 
+// Hint LED keep-alive — periodically re-send the SysEx in case the
+// PartyKeys firmware drops the LED state. Without this the hint can
+// "flash and die" on some devices.
+let _hintTimer = null;
+function startHintLed() {
+  stopHintLed();
+  led(SHORTCUT_NEXT, "hint");
+  _hintTimer = setInterval(() => {
+    if (pkOutput) led(SHORTCUT_NEXT, "hint");
+  }, 1500);
+}
+function stopHintLed() {
+  if (_hintTimer) { clearInterval(_hintTimer); _hintTimer = null; }
+  ledOff(SHORTCUT_NEXT);
+}
+
 // MIDI shortcut: highest Do on 36-key (C5 = 72) advances after a level.
 // Active only when CTA bar is showing or the result page is up — never
 // hijacks an in-progress question.
@@ -2060,13 +2078,23 @@ function midiToVexKey(m) {
   const oct = Math.floor(m / 12 - 1);   // C4=60 → oct 4
   return VEX_PITCH[pc] + "/" + oct;
 }
-function isVexReady() { return !!(window.Vex && window.Vex.Flow); }
-function whenVexReady(cb) {
+function isVexReady() {
+  // VexFlow exposes either window.Vex.Flow (v3 UMD) or window.VexFlow (v4)
+  return !!(
+    (window.Vex && window.Vex.Flow && window.Vex.Flow.Renderer) ||
+    (window.VexFlow && window.VexFlow.Renderer)
+  );
+}
+function getVF() {
+  return (window.Vex && window.Vex.Flow) || window.VexFlow;
+}
+function whenVexReady(cb, fail) {
   if (isVexReady()) return cb();
   let tries = 0;
   const tick = () => {
     if (isVexReady()) cb();
-    else if (tries++ < 100) setTimeout(tick, 80);
+    else if (tries++ < 80) setTimeout(tick, 100);
+    else if (fail) fail();
   };
   tick();
 }
@@ -2107,7 +2135,12 @@ function renderStaff(container, midiArray, opts) {
   };
   whenVexReady(() => {
     container.innerHTML = "";
-    const VF = Vex.Flow;
+    const VF = getVF();
+    if (!VF || !VF.Renderer) {
+      placeholder.textContent = state.lang === "zh" ? "五线谱库加载失败，请检查网络" : "Staff library failed to load";
+      container.innerHTML = ""; container.appendChild(placeholder);
+      return;
+    }
     const w = Math.max(360, container.clientWidth || 480);
     const h = grand ? 220 : 130;
     const renderer = new VF.Renderer(container, VF.Renderer.Backends.SVG);
@@ -2175,6 +2208,16 @@ function renderStaff(container, midiArray, opts) {
     function usedDefaultClef() { return clef || "treble"; }
     ctrl._notes = items.map(it => it.note);
     container._staffCtrl = ctrl;
+  }, () => {
+    // Fail: show timeout message
+    container.innerHTML = "";
+    const fp = document.createElement("div");
+    fp.className = "staff-loading";
+    fp.style.color = "var(--red)";
+    fp.textContent = state.lang === "zh"
+      ? "五线谱加载超时，请刷新页面重试"
+      : "Staff load timeout — try refreshing";
+    container.appendChild(fp);
   });
   return ctrl;
 }
@@ -2223,7 +2266,21 @@ function buildKeyboard(container, lowOpt, highOpt) {
     k.addEventListener("pointerleave", () => virtualRelease(n));
     inner.appendChild(k);
   });
-  // Build blacks — perfectly centered on boundary between adjacent whites
+  // Build blacks — using REAL piano geometry (not naive centering).
+  // Each black key has a slight offset from its boundary based on the
+  // 2-group / 3-group it belongs to:
+  //   C# +0.06ww   D# -0.06ww  (lean toward middle of 2-group)
+  //   F# +0.10ww   G#  0       A# -0.10ww (lean within 3-group)
+  function blackOffset(pc) {
+    switch (pc) {
+      case 1:  return  0.06;
+      case 3:  return -0.06;
+      case 6:  return  0.10;
+      case 8:  return  0;
+      case 10: return -0.10;
+      default: return 0;
+    }
+  }
   let whiteIdx = 0;
   for (let n = low; n <= high; n++) {
     if (isBlack(n)) {
@@ -2231,8 +2288,9 @@ function buildKeyboard(container, lowOpt, highOpt) {
       k.className = "key black";
       k.dataset.note = n;
       const bw = ww * 0.6;                 // black key width
+      const offset = blackOffset(n % 12);
       // boundary between white[whiteIdx-1] and white[whiteIdx] is at (whiteIdx * ww)
-      k.style.left = (whiteIdx * ww - bw / 2) + "%";
+      k.style.left = (whiteIdx * ww - bw / 2 + offset * ww) + "%";
       k.style.width = bw + "%";
       k.addEventListener("pointerdown", (e) => { e.stopPropagation(); virtualPress(n); });
       k.addEventListener("pointerup", (e) => { e.stopPropagation(); virtualRelease(n); });
@@ -2790,7 +2848,71 @@ const MEL = {
   invention1: [60,62,64,65,62,64,60, 67,69,71,72],                   // Bach Invention No.1 simplified
 };
 
-const EXAM_LESSONS = [
+// Density-booster: takes a lesson's small question array and triples it
+// with related practice variants — warm-up, echo of unique notes, slow
+// staff version, and a combined Boss-style mini-finale. Result: each
+// lesson is a real ~5-min practice instead of a 30-second flyby.
+function denseExam(lesson) {
+  const base = (lesson.questions || []).slice();
+  const out = [];
+  const allTargets = new Set();
+  const allSequences = [];
+  base.forEach(q => {
+    if (typeof q.target === "number") allTargets.add(q.target);
+    if (Array.isArray(q.sequence)) {
+      const flat = q.sequence.map(s => typeof s === "object" ? s.midi : s);
+      flat.forEach(n => allTargets.add(n));
+      if (flat.length >= 3) allSequences.push({ seq: flat, grand: !!q.grand, label: q.label });
+    }
+    if (Array.isArray(q.choices)) {
+      // T3 — extract correct target
+      if (typeof q.target === "number") allTargets.add(q.target);
+    }
+  });
+  // 1) Warm-up tap (always)
+  if (!base[0] || base[0].type !== "T_ANY") {
+    out.push({type:"T_ANY", count: 3, prompt:"warmup"});
+  }
+  // 2) Original questions in order
+  base.forEach(q => out.push(q));
+  // 3) Echo per unique target (up to 6)
+  Array.from(allTargets).slice(0, 6).forEach(t => out.push({type:"T2", target: t}));
+  // 4) For each T_STAFF, add a slowed-down version
+  base.forEach(q => {
+    if (q.type === "T_STAFF" && Array.isArray(q.sequence) && q.sequence.length >= 4) {
+      const slow = q.sequence.map(s =>
+        typeof s === "object" ? Object.assign({}, s, { dur: "h" }) : { midi: s, dur: "h" });
+      out.push({ type: "T_STAFF", sequence: slow, label: (q.label || "") + " · 慢练" , grand: !!q.grand });
+    }
+  });
+  // 5) For each sequence, an audio-only echo (T7 simon)
+  allSequences.slice(0, 2).forEach(s => {
+    if (s.seq.length <= 6) out.push({ type: "T7", sequence: s.seq });
+  });
+  // 6) Combo finale — string the unique targets together as 综合练习
+  if (allTargets.size >= 3) {
+    const arr = Array.from(allTargets).sort((a,b)=>a-b);
+    const combined = arr.concat(arr.slice().reverse());
+    out.push({ type:"T8", sequence: combined, label: "综合上下行", gap: 420 });
+  }
+  // 7) Boss extras: replay the boss melody at original tempo + fast version
+  if (lesson.isBoss && allSequences.length) {
+    allSequences.forEach(s => {
+      out.push({ type: "T_STAFF", sequence: s.seq, label: (s.label || "") + " · 加速版", grand: s.grand });
+    });
+    // Final reverse-direction run
+    if (allSequences[0].seq.length >= 4) {
+      out.push({ type:"T8", sequence: allSequences[0].seq.slice().reverse(), label:"倒回弹", gap: 500 });
+    }
+  }
+  // 8) Tail: if still thin, add free-tap reinforcement
+  if (out.length < 6) {
+    Array.from(allTargets).slice(0, 6 - out.length).forEach(t => out.push({type:"T1", target: t}));
+  }
+  return Object.assign({}, lesson, { questions: out });
+}
+
+const EXAM_LESSONS_RAW = [
   /* ─── Level 1 · 键盘岛 ─── */
   ex("1.1","L1","找到中央 C","Find Middle C",
     "中央 C 是钢琴正中间那个 Do 🎹","Middle C is the center key (C4).",
@@ -3022,6 +3144,9 @@ const EXAM_LESSONS = [
     [stf(MEL.bach846, "BWV 846 第 1 段"),
      stf([60,64,67,72,76, 60,64,67,72,76, 60,62,69,72,77], "BWV 846 第 2 段")], true, 150),
 ];
+
+// Apply density booster — every exam lesson now has 5-12 questions
+const EXAM_LESSONS = EXAM_LESSONS_RAW.map(denseExam);
 
 const EXAM_MODULES = [
   { id: "L1",  labelKey: "module_L1",  color: "green",       open: true },
@@ -3768,8 +3893,8 @@ function onCorrect() {
   document.getElementById("cta-bar").classList.add("show","win");
   document.getElementById("cta-btn").classList.remove("lose");
   document.getElementById("cta-btn").onclick = nextQuestion;
-  // Faint green hint on the shortcut key — "press this Do to continue"
-  led(SHORTCUT_NEXT, "hint");
+  // Faint green hint on the shortcut key — keep-alive every 1.5s
+  startHintLed();
 }
 
 function onMissAttempt(attempts, q) {
@@ -3807,10 +3932,11 @@ function onMissFinal(q) {
   document.getElementById("cta-btn").classList.add("lose");
   document.getElementById("cta-btn").onclick = nextQuestion;
   // Faint green hint on the shortcut key — also active after a wrong answer
-  led(SHORTCUT_NEXT, "hint");
+  startHintLed();
 }
 
 function nextQuestion() {
+  stopHintLed();
   document.getElementById("cta-bar").classList.remove("show","win","lose");
   document.getElementById("cta-btn").classList.remove("lose");
   session.qIndex++;
@@ -3898,10 +4024,10 @@ function endLesson(win) {
   document.getElementById("mascot-result").innerHTML = mingSvg(stars >= 3 ? "dance" : (win ? "happy" : "scratch"));
   const mr = document.getElementById("mascot-result").querySelector("model-viewer, svg");
   if (mr) { mr.style.width = "180px"; mr.style.height = "180px"; }
-  document.getElementById("result-continue").onclick = () => { ledClearAll(); showView("view-home"); };
+  document.getElementById("result-continue").onclick = () => { stopHintLed(); ledClearAll(); showView("view-home"); };
   showView("view-result");
-  // Hint LED on result page too — let the user advance with high Do
-  led(SHORTCUT_NEXT, "hint");
+  // Hint LED on result page too — keep-alive
+  startHintLed();
 
   // Confetti for perfect runs only
   if (stars >= 3) {
@@ -3918,7 +4044,7 @@ function bindUI() {
   document.getElementById("lang-en").onclick = () => setLang("en");
   document.getElementById("tone-kid").onclick   = () => setTone("kid");
   document.getElementById("tone-adult").onclick = () => setTone("adult");
-  document.getElementById("btn-quit").onclick = () => { onMidiNote = null; ledClearAll(); hideMascot(); showView("view-home"); };
+  document.getElementById("btn-quit").onclick = () => { stopHintLed(); onMidiNote = null; ledClearAll(); hideMascot(); showView("view-home"); };
   document.getElementById("gate-retry").onclick = () => initMidi();
   document.getElementById("gate-demo").onclick = () => { demoMode = true; setMidiPill("Demo mode", "warning"); showView("view-home"); };
   document.getElementById("gate-mascot").innerHTML = mingSvg("happy");
