@@ -807,6 +807,24 @@
   .key.lit-cyan    { background: linear-gradient(180deg, #50e0bd 0%, #20a785 50%, #137f60 100%) !important; color: white !important; box-shadow: inset 0 -3px 0 #084c39, inset 0 2px 8px rgba(140,240,220,0.85), 0 0 18px 2px rgba(19,127,96,0.8); }
   .key.lit-blue    { background: linear-gradient(180deg, #4080ff 0%, #1850c0 50%, #08307f 100%) !important; color: white !important; box-shadow: inset 0 -3px 0 #03194c, inset 0 2px 8px rgba(150,180,255,0.9), 0 0 18px 2px rgba(8,48,127,0.85); }
   .key.lit-purple  { background: linear-gradient(180deg, #b070ff 0%, #7728c0 50%, #4b007f 100%) !important; color: white !important; box-shadow: inset 0 -3px 0 #2c004c, inset 0 2px 8px rgba(210,160,255,0.9), 0 0 18px 2px rgba(75,0,127,0.85); }
+  /* Faint shortcut-key hint — for the "press C5 to continue" affordance.
+     Lighter green than .lit-green and lower opacity so it reads as a
+     suggestion rather than a target. Sends green LED 0x07 to hardware
+     (the SysEx protocol has no per-key dimming, so the on-screen weak
+     glow is what conveys "subtle"). */
+  .key.lit-hint {
+    background: linear-gradient(180deg, #c4f099 0%, #8ed167 50%, #6db844 100%) !important;
+    color: white !important;
+    box-shadow:
+      inset 0 -2px 0 rgba(78,170,32,0.55),
+      inset 0 2px 6px rgba(190,255,160,0.5),
+      0 0 10px 1px rgba(110,200,60,0.32);
+    opacity: 0.62;
+  }
+  .key.black.lit-hint {
+    background: linear-gradient(180deg, #6db844 0%, #4a9322 60%, #2d6e10 100%) !important;
+    opacity: 0.62;
+  }
   /* black-key variants: same color, deeper top so black-key context holds */
   .key.black.lit-red     { background: linear-gradient(180deg, #b30000 0%, #7f0000 60%, #4a0000 100%) !important; }
   .key.black.lit-orange  { background: linear-gradient(180deg, #c63500 0%, #7f1500 60%, #4a0a00 100%) !important; }
@@ -1745,8 +1763,12 @@ function pkSendOne(out, note, color) {
 // root/third" all defer to the note's natural rainbow color so the user
 // learns "Do = red, Re = orange…" Wrong-note feedback always stays red.
 function colorNameFor(note, role) {
+  // "hint" is a UI affordance (the shortcut key LED) — always green
+  // regardless of pack color scheme. Don't follow rainbow.
+  if (role === "hint") return "green";
+  if (role === "off")  return "off";
   const scheme = activePack().colorScheme || "role";
-  if (scheme === "rainbow" && role !== "wrong" && role !== "off") {
+  if (scheme === "rainbow" && role !== "wrong") {
     return rainbowColorFor(note);
   }
   return LED_ROLE[role] || role || "green";
@@ -2049,7 +2071,9 @@ function flashKey(n, isOn) {
 function screenLight(n, role) {
   document.querySelectorAll('.key[data-note="' + n + '"]').forEach(k => {
     k.className = k.className.replace(/\blit-\w+/g,"").trim();
-    if (role && role !== "off") {
+    if (role === "hint") {
+      k.classList.add("lit-hint");                  // faint shortcut-key green
+    } else if (role && role !== "off") {
       k.classList.add("lit-" + colorNameFor(n, role));
     }
   });
@@ -3192,6 +3216,8 @@ function onCorrect() {
   document.getElementById("cta-bar").classList.add("show","win");
   document.getElementById("cta-btn").classList.remove("lose");
   document.getElementById("cta-btn").onclick = nextQuestion;
+  // Faint green hint on the shortcut key — "press this Do to continue"
+  led(SHORTCUT_NEXT, "hint");
 }
 
 function onMissAttempt(attempts, q) {
@@ -3228,6 +3254,8 @@ function onMissFinal(q) {
   document.getElementById("cta-bar").classList.add("show","lose");
   document.getElementById("cta-btn").classList.add("lose");
   document.getElementById("cta-btn").onclick = nextQuestion;
+  // Faint green hint on the shortcut key — also active after a wrong answer
+  led(SHORTCUT_NEXT, "hint");
 }
 
 function nextQuestion() {
@@ -3318,8 +3346,10 @@ function endLesson(win) {
   document.getElementById("mascot-result").innerHTML = mingSvg(stars >= 3 ? "dance" : (win ? "happy" : "scratch"));
   const mr = document.getElementById("mascot-result").querySelector("model-viewer, svg");
   if (mr) { mr.style.width = "180px"; mr.style.height = "180px"; }
-  document.getElementById("result-continue").onclick = () => showView("view-home");
+  document.getElementById("result-continue").onclick = () => { ledClearAll(); showView("view-home"); };
   showView("view-result");
+  // Hint LED on result page too — let the user advance with high Do
+  led(SHORTCUT_NEXT, "hint");
 
   // Confetti for perfect runs only
   if (stars >= 3) {
