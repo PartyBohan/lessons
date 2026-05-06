@@ -835,6 +835,37 @@
   .key.lit-cyan    { background: linear-gradient(180deg, #50e0bd 0%, #20a785 50%, #137f60 100%) !important; color: white !important; box-shadow: inset 0 -3px 0 #084c39, inset 0 2px 8px rgba(140,240,220,0.85), 0 0 18px 2px rgba(19,127,96,0.8); }
   .key.lit-blue    { background: linear-gradient(180deg, #4080ff 0%, #1850c0 50%, #08307f 100%) !important; color: white !important; box-shadow: inset 0 -3px 0 #03194c, inset 0 2px 8px rgba(150,180,255,0.9), 0 0 18px 2px rgba(8,48,127,0.85); }
   .key.lit-purple  { background: linear-gradient(180deg, #b070ff 0%, #7728c0 50%, #4b007f 100%) !important; color: white !important; box-shadow: inset 0 -3px 0 #2c004c, inset 0 2px 8px rgba(210,160,255,0.9), 0 0 18px 2px rgba(75,0,127,0.85); }
+  /* Two-hand markers above the staff for grand-staff lessons */
+  .hand-markers {
+    display: flex; justify-content: space-between; align-items: center;
+    max-width: 620px;
+    margin: 4px auto -4px;
+    padding: 0 14px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .hand-markers .lh { color: var(--red);  display: inline-flex; align-items: center; gap: 4px; }
+  .hand-markers .rh { color: var(--blue); display: inline-flex; align-items: center; gap: 4px; }
+  .hand-markers .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .hand-markers .lh .dot { background: var(--red); }
+  .hand-markers .rh .dot { background: var(--blue); }
+
+  /* Two-hand keyboard tinting — left half subtle red, right half subtle blue */
+  .keyboard.two-hand .key.white[data-note]:not([data-note="48"]):not([data-note="49"]) {}
+  .keyboard.two-hand::before {
+    content: ""; position: absolute; left: 14px; right: 50%;
+    top: 14px; bottom: 10px;
+    background: linear-gradient(180deg, transparent 0%, rgba(255,75,75,0.04) 50%, rgba(255,75,75,0.10) 100%);
+    pointer-events: none; border-radius: var(--r-md) 0 0 0;
+  }
+  .keyboard.two-hand::after {
+    content: ""; position: absolute; left: 50%; right: 14px;
+    top: 14px; bottom: 10px;
+    background: linear-gradient(180deg, transparent 0%, rgba(28,176,246,0.04) 50%, rgba(28,176,246,0.10) 100%);
+    pointer-events: none; border-radius: 0 var(--r-md) 0 0;
+  }
+
   /* Staff notation container — VexFlow renders an <svg> inside */
   .staff-container {
     background: white;
@@ -1417,6 +1448,11 @@
     <button class="toggle-btn" id="tone-kid"  title="kid mode">Kid</button>
     <button class="toggle-btn" id="tone-adult" title="adult mode">Pro</button>
   </div>
+  <div class="toggle-group" title="Keyboard label notation">
+    <button class="toggle-btn" id="lab-western">A</button>
+    <button class="toggle-btn" id="lab-jianpu">1</button>
+    <button class="toggle-btn" id="lab-solfege">Do</button>
+  </div>
   <div class="toggle-group">
     <button class="toggle-btn" id="lang-zh">中</button>
     <button class="toggle-btn" id="lang-en">EN</button>
@@ -1548,6 +1584,9 @@ const DEFAULT_STATE = {
   streak: 0, streakLastDay: "",
   lang: "zh", tone: "kid",
   bgm: false,
+  // Keyboard label style: "auto" follows the active pack's noteStyle.
+  // User can override globally via the toggle on the lesson card.
+  keyLabel: "auto", // "auto" | "western" | "jianpu" | "solfege"
   // Multi-pack support: progress is per-pack. Each pack has its own
   // stars-by-lesson dict and its own "unlocked up to" pointer.
   activePack: "basic",
@@ -1680,6 +1719,15 @@ function applyI18n() {
 
 function setLang(l) { state.lang = l; saveState(); refreshToggles(); applyI18n(); refreshPath(); refreshPackTabs(); }
 function setTone(t) { state.tone = t; saveState(); refreshToggles(); }
+function setKeyLabel(s) {
+  state.keyLabel = s;
+  saveState();
+  refreshToggles();
+  // Re-render any visible keyboards: easiest is to refresh the current view
+  refreshPath();
+  // Re-render lesson question if active
+  if (currentView === "view-lesson" && session) renderQuestion();
+}
 function setActivePack(packId) {
   if (!PACKS[packId] || state.activePack === packId) return;
   state.activePack = packId;
@@ -1698,6 +1746,15 @@ function refreshToggles() {
   document.getElementById("lang-en").classList.toggle("on", state.lang === "en");
   document.getElementById("tone-kid").classList.toggle("on", state.tone === "kid");
   document.getElementById("tone-adult").classList.toggle("on", state.tone === "adult");
+  // Label toggles — "auto" highlights the pack's preferred style
+  const eff = effectiveLabelStyle();
+  const fromAuto = state.keyLabel === "auto";
+  const lw = document.getElementById("lab-western");
+  const lj = document.getElementById("lab-jianpu");
+  const ls = document.getElementById("lab-solfege");
+  if (lw) lw.classList.toggle("on", eff === "western");
+  if (lj) lj.classList.toggle("on", eff === "jianpu");
+  if (ls) ls.classList.toggle("on", eff === "solfege");
 }
 
 /* ============================================================
@@ -1826,12 +1883,29 @@ function pkAllOff(out) {
   if (!out) return;
   out.send([0xF0,0x05,0x30,0x7F,0x7F,0x20,0x00,0x71,0x00,0xF7]);
 }
+// SysEx LED throttling — at high play speed many led() calls fire in
+// quick succession. We coalesce them into a single SysEx batch every
+// 10ms, deduping by note (latest color wins). This prevents the
+// "lights can't keep up" feel reported in fast passages.
+let _ledQueue = new Map();   // note → color
+let _ledFlushTimer = null;
+function _flushLeds() {
+  _ledFlushTimer = null;
+  if (!pkOutput || _ledQueue.size === 0) return;
+  const arr = [];
+  _ledQueue.forEach((c, n) => arr.push([n, c]));
+  _ledQueue.clear();
+  // Issue raw SysEx (don't recurse through pkSendLed)
+  const msg = [0xF0,0x05,0x30,0x7F,0x7F,0x20,0x00,0x71, arr.length & 0x7f];
+  for (const [n,c] of arr) msg.push(n & 0x7f, c & 0x7f);
+  msg.push(0xF7);
+  try { pkOutput.send(msg); } catch (e) {}
+}
 function pkSendLed(out, pairs) {
   if (!out || !pairs.length) return;
-  const msg = [0xF0,0x05,0x30,0x7F,0x7F,0x20,0x00,0x71, pairs.length & 0x7f];
-  for (const [n,c] of pairs) msg.push(n & 0x7f, c & 0x7f);
-  msg.push(0xF7);
-  out.send(msg);
+  // Queue each pair (latest color wins for duplicates)
+  for (const [n, c] of pairs) _ledQueue.set(n & 0x7f, c & 0x7f);
+  if (!_ledFlushTimer) _ledFlushTimer = setTimeout(_flushLeds, 10);
 }
 function pkSendOne(out, note, color) {
   if (!out) return;
@@ -1863,9 +1937,8 @@ function led(notes, role) {
 }
 function ledOff(notes) {
   const arr = Array.isArray(notes) ? notes : [notes];
-  if (pkOutput) {
-    arr.forEach(n => pkSendOne(pkOutput, n, 0));
-  }
+  // queue all "off" commands as a single batch via the SysEx throttle
+  if (pkOutput) pkSendLed(pkOutput, arr.map(n => [n, 0]));
   arr.forEach(n => screenLight(n, "off"));
 }
 function ledClearAll() {
@@ -2038,14 +2111,22 @@ const NOTE_NAMES = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
 // black keys keep the next-lower with a "#"
 const JIANPU_NAMES = ["1","#1","2","#2","3","4","#4","5","#5","6","#6","7"];
 function noteName(n) { return NOTE_NAMES[n % 12] + Math.floor(n/12 - 1); }
+function effectiveLabelStyle() {
+  // User override → otherwise follow pack's preferred noteStyle
+  if (state.keyLabel && state.keyLabel !== "auto") return state.keyLabel;
+  return activePack().noteStyle || "western";
+}
 function noteShort(n) {
-  const style = activePack().noteStyle || "western";
+  const style = effectiveLabelStyle();
   if (style === "jianpu") {
     const num = JIANPU_NAMES[n % 12];
-    const oct = Math.floor(n/12 - 1);   // C3 = 3, C4 = 4, C5 = 5
-    if (oct <= 3) return "." + num;     // low octave dot below (rendered via CSS)
-    if (oct >= 5) return num + ".";     // high octave dot above
+    const oct = Math.floor(n/12 - 1);
+    if (oct <= 3) return "." + num;
+    if (oct >= 5) return num + ".";
     return num;
+  }
+  if (style === "solfege") {
+    return SOLFEGE_NAMES[n % 12];
   }
   return NOTE_NAMES[n % 12];
 }
@@ -2271,16 +2352,8 @@ function buildKeyboard(container, lowOpt, highOpt) {
   // 2-group / 3-group it belongs to:
   //   C# +0.06ww   D# -0.06ww  (lean toward middle of 2-group)
   //   F# +0.10ww   G#  0       A# -0.10ww (lean within 3-group)
-  function blackOffset(pc) {
-    switch (pc) {
-      case 1:  return  0.06;
-      case 3:  return -0.06;
-      case 6:  return  0.10;
-      case 8:  return  0;
-      case 10: return -0.10;
-      default: return 0;
-    }
-  }
+  // Pure centered between adjacent whites (uniform across all octaves)
+  function blackOffset(pc) { return 0; }
   let whiteIdx = 0;
   for (let n = low; n <= high; n++) {
     if (isBlack(n)) {
@@ -3430,6 +3503,15 @@ function refreshPath() {
       }
     });
   });
+  // Auto-scroll to current lesson so user lands at where they left off
+  // (works for big paths like advanced 74 / exam 60 — user no longer
+  // has to scroll up & down to find the next unlocked node).
+  setTimeout(() => {
+    const cur = document.querySelector(".lesson-node.current");
+    if (cur) {
+      cur.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, 100);
 }
 
 /* ============================================================
@@ -3826,20 +3908,33 @@ function renderT_STAFF(slot, q) {
     q.label || (state.lang === "zh" ? "按谱面顺序弹奏" : "Play the notes in order"),
     tip);
   slot.appendChild(card);
+  // Two-hand markers — only for grand staff (left/right hand cues)
+  if (q.grand) {
+    const markers = document.createElement("div");
+    markers.className = "hand-markers";
+    markers.innerHTML = state.lang === "zh"
+      ? '<span class="rh"><span class="dot"></span>右手 高音谱号</span><span class="lh"><span class="dot"></span>左手 低音谱号</span>'
+      : '<span class="rh"><span class="dot"></span>RH · Treble</span><span class="lh"><span class="dot"></span>LH · Bass</span>';
+    card.querySelector(".q-body").appendChild(markers);
+  }
   const staffWrap = document.createElement("div");
   staffWrap.className = "staff-container";
   card.querySelector(".q-body").appendChild(staffWrap);
   const kbWrap = document.createElement("div");
   buildKeyboard(kbWrap, PK_LOW, PK_HIGH);
+  if (q.grand) kbWrap.querySelector(".keyboard").classList.add("two-hand");
   card.querySelector(".q-body").appendChild(kbWrap);
 
   const staff = renderStaff(staffWrap, q.sequence, { grand: !!q.grand });
   let idx = 0, errors = 0;
 
   function highlightCurrent() {
-    if (idx > 0) staff.highlight(idx - 1, "#7d8794");                     // played note: dim grey
+    // played notes turn grey, current note green, future stay default
+    for (let i = 0; i < q.sequence.length; i++) {
+      if (i < idx)        staff.highlight(i, "#7d8794");   // played: dim grey
+      else if (i === idx) staff.highlight(i, "#58CC02");   // current: green
+    }
     if (idx < q.sequence.length) {
-      staff.highlight(idx, "#58CC02");                                    // current: green
       const m = (typeof q.sequence[idx] === "object") ? q.sequence[idx].midi : q.sequence[idx];
       led(m, "target");
     }
@@ -4044,6 +4139,10 @@ function bindUI() {
   document.getElementById("lang-en").onclick = () => setLang("en");
   document.getElementById("tone-kid").onclick   = () => setTone("kid");
   document.getElementById("tone-adult").onclick = () => setTone("adult");
+  ["western","jianpu","solfege"].forEach(s => {
+    const b = document.getElementById("lab-" + s);
+    if (b) b.onclick = () => setKeyLabel(s);
+  });
   document.getElementById("btn-quit").onclick = () => { stopHintLed(); onMidiNote = null; ledClearAll(); hideMascot(); showView("view-home"); };
   document.getElementById("gate-retry").onclick = () => initMidi();
   document.getElementById("gate-demo").onclick = () => { demoMode = true; setMidiPill("Demo mode", "warning"); showView("view-home"); };
