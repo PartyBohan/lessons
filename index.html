@@ -835,6 +835,94 @@
   .key.lit-cyan    { background: linear-gradient(180deg, #50e0bd 0%, #20a785 50%, #137f60 100%) !important; color: white !important; box-shadow: inset 0 -3px 0 #084c39, inset 0 2px 8px rgba(140,240,220,0.85), 0 0 18px 2px rgba(19,127,96,0.8); }
   .key.lit-blue    { background: linear-gradient(180deg, #4080ff 0%, #1850c0 50%, #08307f 100%) !important; color: white !important; box-shadow: inset 0 -3px 0 #03194c, inset 0 2px 8px rgba(150,180,255,0.9), 0 0 18px 2px rgba(8,48,127,0.85); }
   .key.lit-purple  { background: linear-gradient(180deg, #b070ff 0%, #7728c0 50%, #4b007f 100%) !important; color: white !important; box-shadow: inset 0 -3px 0 #2c004c, inset 0 2px 8px rgba(210,160,255,0.9), 0 0 18px 2px rgba(75,0,127,0.85); }
+  /* ─── 6-Phase Boss Flow tracker ─── */
+  .boss-tracker {
+    max-width: 620px;
+    margin: 0 auto 14px;
+    padding: 8px 12px;
+    background: linear-gradient(135deg, #fffbe5 0%, #fff3c8 100%);
+    border: 1px solid #ffd86b;
+    border-radius: var(--r-md);
+    box-shadow: 0 2px 8px rgba(255,200,0,0.15);
+  }
+  .boss-tracker-title {
+    font-size: 11px; font-weight: 700; color: #6F4F00;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    margin-bottom: 6px; text-align: center;
+  }
+  .boss-stages {
+    display: flex; gap: 4px; align-items: stretch;
+  }
+  .boss-stage {
+    flex: 1;
+    text-align: center;
+    padding: 6px 2px 4px;
+    border-radius: 8px;
+    font-size: 9.5px; font-weight: 700;
+    background: rgba(255,255,255,0.7);
+    border: 1px solid rgba(0,0,0,0.06);
+    color: #8a7a3a;
+    transition: all 200ms var(--ease);
+    position: relative;
+  }
+  .boss-stage .icon { font-size: 16px; line-height: 1; display: block; margin-bottom: 2px; }
+  .boss-stage.done {
+    background: linear-gradient(180deg, #79DD22 0%, #58CC02 100%);
+    color: white; border-color: var(--green-deep);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.4);
+  }
+  .boss-stage.now  {
+    background: linear-gradient(180deg, #FFD650 0%, #FFC800 100%);
+    color: #4a3200; border-color: #d8a900;
+    box-shadow: 0 0 0 2px rgba(255,200,0,0.4), inset 0 1px 0 rgba(255,255,255,0.5);
+    transform: translateY(-1px);
+  }
+  .boss-stage.locked { opacity: 0.55; }
+  @media (max-width: 480px) {
+    .boss-stage { font-size: 8.5px; padding: 5px 1px 3px; }
+    .boss-stage .icon { font-size: 14px; }
+  }
+  /* Beat row for T_RHYTHM */
+  .beat-row {
+    display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;
+    margin: 18px auto;
+    max-width: 480px;
+  }
+  .beat-dot {
+    width: 38px; height: 38px; border-radius: 50%;
+    background: var(--surface-2); border: 2px solid var(--line);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 13px; color: var(--ink-3);
+    transition: all 200ms var(--ease);
+  }
+  .beat-dot.now {
+    background: var(--blue); color: white; border-color: var(--blue-deep);
+    transform: scale(1.15); box-shadow: 0 0 14px rgba(28,176,246,0.5);
+  }
+  .beat-dot.hit {
+    background: var(--green); color: white; border-color: var(--green-deep);
+    box-shadow: inset 0 -2px 0 var(--green-deep);
+  }
+
+  /* Boss result page — 6 badges grid */
+  .boss-badges {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+    max-width: 360px; margin: 16px auto;
+  }
+  .boss-badge {
+    text-align: center; padding: 10px 4px;
+    background: var(--surface);
+    border: 1px solid var(--line); border-radius: var(--r-md);
+    font-size: 10px; font-weight: 700; color: var(--ink-3);
+    box-shadow: var(--shadow-1);
+  }
+  .boss-badge .icon { font-size: 22px; display: block; margin-bottom: 3px; }
+  .boss-badge.earned {
+    background: linear-gradient(135deg, #58CC02 0%, #4cb600 100%);
+    color: white; border-color: var(--green-deep);
+    box-shadow: 0 4px 14px rgba(88,204,2,0.3);
+  }
+
   /* Two-hand markers above the staff for grand-staff lessons */
   .hand-markers {
     display: flex; justify-content: space-between; align-items: center;
@@ -2925,6 +3013,48 @@ const MEL = {
 // with related practice variants — warm-up, echo of unique notes, slow
 // staff version, and a combined Boss-style mini-finale. Result: each
 // lesson is a real ~5-min practice instead of a 30-second flyby.
+/* ─────────────────────────────────────────────────────────────
+   Boss Flow expander — turn any isBoss lesson into a 6-stage
+   challenge. Stages:
+     1. 试听 / 预览 (T_PREVIEW)      — auto-play melody on staff
+     2. 节奏练习 (T_RHYTHM)           — tap N times on any key
+     3. 标准指法跟弹 (T_STAFF)        — full LED guidance
+     4. 灭灯巩固 (T_STAFF noLed)      — staff visible, LEDs off
+     5. 完整连贯 (T8 half hint)       — only first hint, rest free
+     6. 终极挑战 (T8 no hint)         — no help, full piece
+   Each stage records a badge; result page shows 6 badges + stars.
+   ───────────────────────────────────────────────────────────── */
+const BOSS_PHASE_LABELS_ZH = ["试听预览","节奏练习","标准跟弹","灭灯巩固","完整连贯","终极挑战"];
+const BOSS_PHASE_LABELS_EN = ["Preview","Rhythm","LED Guided","LEDs Off","Full Run","Final Boss"];
+const BOSS_PHASE_ICONS = ["👂","🥁","💡","🌑","🎶","🏆"];
+
+function applyBossFlow(lesson) {
+  if (!lesson.isBoss) return lesson;
+  // Find the longest melody from the lesson's questions
+  let melody = null, isGrand = false, label = (lesson.title && (lesson.title.zh || lesson.title.en)) || "";
+  (lesson.questions || []).forEach(q => {
+    if ((q.type === "T_STAFF" || q.type === "T8") && Array.isArray(q.sequence)) {
+      const seq = q.sequence.map(s => typeof s === "object" ? s.midi : s).filter(n => typeof n === "number");
+      if (seq.length >= 3 && (!melody || seq.length > melody.length)) {
+        melody = seq;
+        isGrand = !!q.grand;
+        if (q.label) label = q.label;
+      }
+    }
+  });
+  if (!melody) return lesson;
+  // Build 6-phase question array
+  const phases = [
+    { type: "T_PREVIEW", sequence: melody, grand: isGrand, label: label, phase: 1 },
+    { type: "T_RHYTHM",  count: melody.length, label: label, phase: 2 },
+    { type: "T_STAFF",   sequence: melody, grand: isGrand, label: label, phase: 3 },
+    { type: "T_STAFF",   sequence: melody, grand: isGrand, label: label, phase: 4, noLed: true },
+    { type: "T8",        sequence: melody, label: label, phase: 5, gap: 480, hintMode: "half" },
+    { type: "T8",        sequence: melody, label: label, phase: 6, gap: 420, hintMode: "none" },
+  ];
+  return Object.assign({}, lesson, { questions: phases, bossFlow: true, totalPhases: 6 });
+}
+
 function denseExam(lesson) {
   const base = (lesson.questions || []).slice();
   const out = [];
@@ -3218,8 +3348,8 @@ const EXAM_LESSONS_RAW = [
      stf([60,64,67,72,76, 60,64,67,72,76, 60,62,69,72,77], "BWV 846 第 2 段")], true, 150),
 ];
 
-// Apply density booster — every exam lesson now has 5-12 questions
-const EXAM_LESSONS = EXAM_LESSONS_RAW.map(denseExam);
+// Boss lessons → 6-phase flow; non-boss lessons → density booster
+const EXAM_LESSONS = EXAM_LESSONS_RAW.map(l => l.isBoss ? applyBossFlow(l) : denseExam(l));
 
 const EXAM_MODULES = [
   { id: "L1",  labelKey: "module_L1",  color: "green",       open: true },
@@ -3243,7 +3373,7 @@ const PACKS = {
     title:    { zh: "基础课", en: "Basics" },
     subtitle: { zh: "音乐密码 · 多邻国基础", en: "Music Code · Duolingo Basics" },
     color: "green",
-    lessons: BASIC_LESSONS,
+    lessons: BASIC_LESSONS.map(l => l.isBoss ? applyBossFlow(l) : l),
     modules: BASIC_MODULES,
     noteStyle:   "western",   // CDEFGAB
     colorScheme: "role",      // existing LED roles (green=target, etc.)
@@ -3253,7 +3383,7 @@ const PACKS = {
     title:    { zh: "进阶包", en: "Advanced" },
     subtitle: { zh: "音乐密码 · 多邻国进阶", en: "Music Code · Duolingo Advanced" },
     color: "purple",
-    lessons: ADVANCED_LESSONS,
+    lessons: ADVANCED_LESSONS.map(l => l.isBoss ? applyBossFlow(l) : l),
     modules: ADVANCED_MODULES,
     noteStyle:   "jianpu",    // 1234567 + octave dots
     colorScheme: "rainbow",   // Do=red, Re=orange, etc.
@@ -3508,8 +3638,8 @@ function refreshPath() {
   // has to scroll up & down to find the next unlocked node).
   setTimeout(() => {
     const cur = document.querySelector(".lesson-node.current");
-    if (cur) {
-      cur.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (cur && typeof cur.scrollIntoView === "function") {
+      try { cur.scrollIntoView({ behavior: "smooth", block: "center" }); } catch (e) {}
     }
   }, 100);
 }
@@ -3568,6 +3698,21 @@ function renderQuestion() {
   document.getElementById("cta-bar").classList.remove("show","win","lose");
   ledClearAll();
 
+  // Boss flow: render the 6-stage tracker above the question card
+  if (session.lesson && session.lesson.bossFlow) {
+    const tracker = document.createElement("div");
+    tracker.className = "boss-tracker";
+    const labels = state.lang === "zh" ? BOSS_PHASE_LABELS_ZH : BOSS_PHASE_LABELS_EN;
+    const stages = labels.map((nm, i) => {
+      const s = i + 1;
+      const cls = (s < session.qIndex + 1) ? "done"
+                : (s === session.qIndex + 1) ? "now" : "locked";
+      return `<div class="boss-stage ${cls}"><span class="icon">${BOSS_PHASE_ICONS[i]}</span>${nm}</div>`;
+    }).join("");
+    tracker.innerHTML = `<div class="boss-tracker-title">${state.lang === "zh" ? "Boss 关 · 六阶段挑战" : "Boss Challenge · 6 Stages"}</div><div class="boss-stages">${stages}</div>`;
+    slot.appendChild(tracker);
+  }
+
   if (q.type === "T_ANY") renderTAny(slot, q);
   else if (q.type === "T1") renderT1(slot, q);
   else if (q.type === "T2") renderT2(slot, q);
@@ -3575,6 +3720,8 @@ function renderQuestion() {
   else if (q.type === "T7") renderT7(slot, q);
   else if (q.type === "T8") renderT8(slot, q);
   else if (q.type === "T_STAFF") renderT_STAFF(slot, q);
+  else if (q.type === "T_PREVIEW") renderT_PREVIEW(slot, q);
+  else if (q.type === "T_RHYTHM") renderT_RHYTHM(slot, q);
 }
 
 function questionCard(title, prompt, tip) {
@@ -3856,7 +4003,14 @@ function renderT8(slot, q) {
       if (i < idx) c.classList.add("done");
       else if (i === idx) c.classList.add("now");
     });
-    if (idx < q.sequence.length) led(q.sequence[idx], "target");
+    if (idx < q.sequence.length) {
+      // hintMode controls LED guidance:
+      //   undefined / "full" → light every note
+      //   "half"             → only light first 4 notes (intro hint)
+      //   "none"             → never light (final boss)
+      const hint = q.hintMode || "full";
+      if (hint === "full" || (hint === "half" && idx < 4)) led(q.sequence[idx], "target");
+    }
   }
   function demo() {
     onMidiNote = null;
@@ -3901,10 +4055,87 @@ function renderT8(slot, q) {
    should play is highlighted green on the staff AND lit on the
    keyboard via LED. Wrong key → red flash on staff & keyboard.
    On correct key, advance to next note. */
+/* ---------- T_PREVIEW: auto-play melody on staff (Boss flow phase 1) ---------- */
+function renderT_PREVIEW(slot, q) {
+  const card = questionCard(
+    state.lang === "zh" ? "试听 · 预览乐谱" : "Listen & preview",
+    q.label || "",
+    state.lang === "zh" ? "听一遍完整旋律，再开始练习。" : "Listen once before practice.");
+  slot.appendChild(card);
+  const staffWrap = document.createElement("div");
+  staffWrap.className = "staff-container";
+  card.querySelector(".q-body").appendChild(staffWrap);
+  const staff = renderStaff(staffWrap, q.sequence, { grand: !!q.grand });
+  // Auto-play melody once with staff highlight + audio
+  const len = q.sequence.length;
+  const gap = 480;
+  let played = false;
+  function playOnce() {
+    if (played) return; played = true;
+    q.sequence.forEach((s, i) => {
+      const m = (typeof s === "object") ? s.midi : s;
+      setTimeout(() => {
+        playNote(m, 0.4);
+        staff.highlight(i, "#58CC02");
+        setTimeout(() => staff.highlight(i, "#7d8794"), 360);
+      }, i * gap);
+    });
+    setTimeout(() => onCorrect(), len * gap + 700);
+  }
+  setTimeout(playOnce, 800);
+  // Allow MIDI press to also continue if user is impatient
+  onMidiNote = () => { onMidiNote = null; setTimeout(() => onCorrect(), 200); };
+}
+
+/* ---------- T_RHYTHM: tap N times on any key in tempo (Boss flow phase 2) ---------- */
+function renderT_RHYTHM(slot, q) {
+  const card = questionCard(
+    state.lang === "zh" ? "节奏小练习" : "Rhythm warmup",
+    q.label || "",
+    state.lang === "zh" ? `跟着节拍器在任意键上敲 ${q.count} 下` : `Tap any key ${q.count} times in tempo`);
+  slot.appendChild(card);
+  const beats = document.createElement("div");
+  beats.className = "beat-row";
+  for (let i = 0; i < q.count; i++) {
+    const dot = document.createElement("div");
+    dot.className = "beat-dot";
+    dot.textContent = (i + 1);
+    beats.appendChild(dot);
+  }
+  card.querySelector(".q-body").appendChild(beats);
+  const kbWrap = document.createElement("div");
+  buildKeyboard(kbWrap, PK_LOW, PK_HIGH);
+  card.querySelector(".q-body").appendChild(kbWrap);
+  let userTaps = 0;
+  let beatIdx = 0;
+  let metroTimer = null;
+  function clickBeat() {
+    if (beatIdx >= q.count) {
+      clearInterval(metroTimer); metroTimer = null;
+      return;
+    }
+    Array.from(beats.children).forEach((d, i) => d.classList.toggle("now", i === beatIdx));
+    playNote(84, 0.04, 0.06); // metronome click (high E5)
+    beatIdx++;
+  }
+  // 70 BPM click
+  setTimeout(() => { clickBeat(); metroTimer = setInterval(clickBeat, 60000 / 70); }, 600);
+  onMidiNote = (note, vel, isOn) => {
+    if (!isOn) return;
+    userTaps++;
+    Array.from(beats.children).forEach((d, i) => { if (i < userTaps) d.classList.add("hit"); });
+    if (userTaps >= q.count) {
+      onMidiNote = null;
+      if (metroTimer) clearInterval(metroTimer);
+      setTimeout(() => onCorrect(), 400);
+    }
+  };
+}
+
 function renderT_STAFF(slot, q) {
   const tip = q.tip ? (typeof q.tip === "string" ? q.tip : q.tip[state.lang] || q.tip.zh) : null;
   const card = questionCard(
-    state.lang === "zh" ? "看谱弹琴" : "Sight-read the staff",
+    state.lang === "zh" ? (q.noLed ? "灭灯巩固 · 看谱弹琴" : "看谱弹琴") : (q.noLed ? "LEDs off · Sight-read" : "Sight-read the staff"),
     q.label || (state.lang === "zh" ? "按谱面顺序弹奏" : "Play the notes in order"),
     tip);
   slot.appendChild(card);
@@ -3934,7 +4165,7 @@ function renderT_STAFF(slot, q) {
       if (i < idx)        staff.highlight(i, "#7d8794");   // played: dim grey
       else if (i === idx) staff.highlight(i, "#58CC02");   // current: green
     }
-    if (idx < q.sequence.length) {
+    if (idx < q.sequence.length && !q.noLed) {              // suppress LED in 灭灯模式
       const m = (typeof q.sequence[idx] === "object") ? q.sequence[idx].midi : q.sequence[idx];
       led(m, "target");
     }
@@ -4119,6 +4350,20 @@ function endLesson(win) {
   document.getElementById("mascot-result").innerHTML = mingSvg(stars >= 3 ? "dance" : (win ? "happy" : "scratch"));
   const mr = document.getElementById("mascot-result").querySelector("model-viewer, svg");
   if (mr) { mr.style.width = "180px"; mr.style.height = "180px"; }
+  // Boss flow: render 6-badges grid showing which stages were completed
+  const existing = document.getElementById("result-boss-badges");
+  if (existing) existing.remove();
+  if (lesson.bossFlow && win) {
+    const labels = state.lang === "zh" ? BOSS_PHASE_LABELS_ZH : BOSS_PHASE_LABELS_EN;
+    const grid = document.createElement("div");
+    grid.id = "result-boss-badges";
+    grid.className = "boss-badges";
+    grid.innerHTML = labels.map((nm, i) =>
+      `<div class="boss-badge earned"><span class="icon">${BOSS_PHASE_ICONS[i]}</span>${nm}</div>`
+    ).join("");
+    const continueBtn = document.getElementById("result-continue");
+    continueBtn.parentNode.insertBefore(grid, continueBtn);
+  }
   document.getElementById("result-continue").onclick = () => { stopHintLed(); ledClearAll(); showView("view-home"); };
   showView("view-result");
   // Hint LED on result page too — keep-alive
