@@ -1017,6 +1017,32 @@
     box-shadow: 0 4px 14px rgba(88,204,2,0.3);
   }
 
+  /* Chord stack: 1-3-5 displayed vertically (top = highest pitch) */
+  .chord-stack {
+    display: inline-flex; flex-direction: column-reverse; gap: 4px;
+    align-items: center;
+    margin: 14px auto 16px;
+    padding: 8px 14px;
+    background: linear-gradient(180deg, #f4fbe8 0%, #e8f5d4 100%);
+    border: 1px solid #c5e08c;
+    border-radius: var(--r-md);
+  }
+  .chord-stack .chord-pill {
+    background: linear-gradient(180deg, #79DD22 0%, var(--green) 60%, var(--green-2));
+    color: white;
+    font-family: var(--font-mono);
+    font-weight: 800; font-size: 16px;
+    padding: 6px 16px;
+    border-radius: var(--r-pill);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.4);
+    min-width: 56px; text-align: center;
+  }
+  .chord-stack .chord-pill:not(:last-child)::after {
+    content: ""; display: block;
+    height: 4px; margin: 4px auto -8px;
+    width: 1px;
+  }
+
   /* Two-hand markers above the staff for grand-staff lessons */
   .hand-markers {
     display: flex; justify-content: space-between; align-items: center;
@@ -2456,6 +2482,18 @@ function playSeq(notes, gap = 0.45, dur = 0.4) {
   const ctx = ensureAudio(); if (!ctx) return;
   notes.forEach((n, i) => setTimeout(() => playNote(n, dur), i * gap * 1000));
 }
+// Map a notation duration code to a real-time audio duration (sec) at 80 BPM.
+// Used by T_STAFF auto-play and Boss preview phase to give realistic note lengths.
+function durToAudioSec(d) {
+  switch (d) {
+    case "w":  return 2.4;
+    case "h":  return 1.2;
+    case "q":  return 0.6;
+    case "8":  return 0.3;
+    case "16": return 0.15;
+    default:   return 0.6;
+  }
+}
 function dingCorrect() { playNote(72, 0.15, 0.08); setTimeout(() => playNote(76, 0.18, 0.1), 80); }
 function buzzWrong()   { playNote(53, 0.18, 0.06); setTimeout(() => playNote(50, 0.22, 0.06), 80); }
 
@@ -2699,22 +2737,49 @@ function renderStaff(container, midiArray, opts) {
     const ctx = renderer.getContext();
     ctx.setFont("system-ui", 11);
 
-    // Build per-note objects, splitting by clef if grand staff
+    // Build per-note objects, splitting by clef if grand staff.
+    // Each item in midiArray can be:
+    //   number              → single note (quarter)
+    //   {midi, dur}          → single note with duration
+    //   {chord:[...], dur}   → multiple notes stacked (vertical chord)
+    //   [n,n,n]              → shorthand for chord at quarter
     const items = midiArray.map(m => {
-      const midi = (typeof m === "object") ? m.midi : m;
-      const dur  = (typeof m === "object" && m.dur) ? m.dur : "q";
-      const useBass = grand && midi < 60;       // middle C as split point
+      let midis, dur, isChord = false;
+      if (Array.isArray(m)) { midis = m; dur = "q"; isChord = true; }
+      else if (typeof m === "object" && Array.isArray(m.chord)) { midis = m.chord; dur = m.dur || "h"; isChord = true; }
+      else if (typeof m === "object") { midis = [m.midi]; dur = m.dur || "q"; }
+      else { midis = [m]; dur = "q"; }
+
+      const lowest = Math.min.apply(null, midis);
+      const useBass = grand && lowest < 60;
       const usedClef = clef || (useBass ? "bass" : "treble");
-      const note = new VF.StaveNote({
-        keys: [midiToVexKey(midi)],
-        duration: dur,
-        clef: usedClef,
+      const keys = midis.slice().sort((a,b) => a-b).map(midiToVexKey);
+      const note = new VF.StaveNote({ keys, duration: dur, clef: usedClef });
+      // accidentals for any sharp pitch class
+      midis.forEach((mm, i) => {
+        if (SHARP_PCS.has(((mm % 12)+12)%12)) {
+          note.addModifier(new VF.Accidental("#"), i);
+        }
       });
-      if (SHARP_PCS.has(((midi % 12)+12)%12)) {
-        note.addModifier(new VF.Accidental("#"));
+      // Optional fingering above each note (e.g. scale fingerings 12345)
+      if (opts.fingerings && opts.fingerings[items ? items.length : 0] != null) {
+        // (handled below with index access)
       }
-      return { midi, note, clef: usedClef };
+      return { midis, note, clef: usedClef, isChord };
     });
+    // Apply fingerings if provided (one per item, single-note only)
+    if (Array.isArray(opts.fingerings)) {
+      items.forEach((it, i) => {
+        const f = opts.fingerings[i];
+        if (f != null && !it.isChord) {
+          try {
+            const fing = new VF.FretHandFinger(String(f));
+            fing.setPosition(VF.Modifier.Position.ABOVE);
+            it.note.addModifier(fing, 0);
+          } catch (e) {}
+        }
+      });
+    }
 
     function durToBeats(d) { return d === "w" ? 4 : d === "h" ? 2 : d === "8" ? 0.5 : d === "16" ? 0.25 : 1; }
     const totalBeats = midiArray.reduce((s, m) => s + durToBeats((typeof m === "object" && m.dur) ? m.dur : "q"), 0);
@@ -3097,7 +3162,7 @@ const ADVANCED_LESSONS = [
       [f1(MI), f1(MI), p8([RE, MI, RE, MI], "Re-Mi 走"), c3(MI, ["Re","Mi","Fa","Sol"])]),
   adv("1.2.4", "ch1", "弹 Do Re Mi", "Play Do Re Mi",
       _i("三个音连起来弹！失恋阵线联盟开头 🎶", "T7 序列复现 + T8 连弹练习。", "Connect three notes!", "T7 sequence + T8 phrase."),
-      [s7([DO, RE, MI]), s7([MI, RE, DO]), p8([MI, MI, MI, RE, DO, DO], "失恋阵线联盟（片段）")]),
+      [s7([DO, RE, MI]), s7([MI, RE, DO]), p8([MI, MI, MI, RE, DO, DO], "Mi-Re-Do 三音练习句")]),
   adv("1.2.5", "ch1", "★ 超级挑战 Do Re Mi", "★ Super Challenge: DRM",
       _i("展示你的成果！弹 Do Re Mi 整段 ⭐", "综合考核：节奏 + 准确度 + 速度。", "Show your DRM mastery!", "Combined accuracy + tempo test."),
       [p8([DO, RE, MI, DO, RE, MI, DO, MI, RE, DO], "Do Re Mi 综合")], true, 20),
@@ -3114,8 +3179,8 @@ const ADVANCED_LESSONS = [
       [f1(_DO), f1(_RE), p8([_DO, _RE, _DO, _RE], "动 大 动 大", 600)]),
   adv("1.3.4", "ch1", "★ 超级挑战 节奏初尝", "★ Rhythm intro challenge",
       _i("大城小爱 + 奇迹再现的节奏感受 ⭐", "节奏综合关。", "Big-city + Miracle rhythms!", "Mixed rhythm boss."),
-      [p8([DO, MI, SOL, MI, DO, MI, SOL, MI], "节奏 1"),
-       p8([_DO, _RE, _DO, _RE, _DO, _RE, _DO, _RE], "鼓打 8 拍", 400)], true, 25),
+      [p8([DO, MI, SOL, MI, DO, MI, SOL, MI], "1-3-5-3 八拍练习"),
+       p8([_DO, _RE, _DO, _RE, _DO, _RE, _DO, _RE], "鼓打 8 拍 动大动大", 400)], true, 25),
 
   adv("1.4.1", "ch1", "无名指弹 Fa", "Ring finger plays Fa",
       _i("Fa 是绿色 🟢 用无名指！", "Fa = 绿色键 = F4。", "Fa is green — ring finger!", "Fa = F4 (green)."),
@@ -3127,22 +3192,22 @@ const ADVANCED_LESSONS = [
        p8([MI, FA, SOL, FA, MI], "Mi-Fa-Sol 上下")]),
   adv("1.4.3", "ch1", "★ 五指超级挑战", "★ Five-finger super challenge",
       _i("粉刷匠 / 听妈妈的话 / 依然爱你 任选 ⭐", "五指综合关：12345 自由组合。", "Painter / Listen to mom / Love.", "Five-finger combo."),
-      [p8([DO, MI, MI, FA, MI, RE], "粉刷匠片段"),
-       p8([DO, RE, MI, SOL, FA, MI], "听妈妈的话"),
-       p8([DO, RE, MI, FA, SOL, FA, MI, RE, DO], "依然爱你 / DRMFS 全程")], true, 30),
+      [p8([DO, MI, MI, FA, MI, RE], "1-3-3-4-3-2 五指综合 1"),
+       p8([DO, RE, MI, SOL, FA, MI], "DRMFS 跳跃练习"),
+       p8([DO, RE, MI, FA, SOL, FA, MI, RE, DO], "C 大调五指上下行")], true, 30),
 
   adv("1.5.1", "ch1", "八分音符", "Eighth notes",
       _i("八分音符 = 半格 ⚡ 一拍弹两下", "八分音符 = 0.5 拍。", "Eighth = half a box, 2 per beat.", "Eighth = 0.5 beats."),
-      [p8([DO, DO, RE, RE, MI, MI, FA, FA], "八分练习", 350),
-       p8([DO, MI, RE, FA, MI, SOL, FA, LA], "不能说的秘密（片段）", 300)]),
+      [p8([DO, DO, RE, RE, MI, MI, FA, FA], "八分音符上行练习", 350),
+       p8([DO, MI, RE, FA, MI, SOL, FA, LA], "8 分音 跳进练习", 300)]),
   adv("1.5.2", "ch1", "用踩镲打八分", "Hi-hat eighths",
       _i("最低 E3 当踩镲 'ci'，跟着节拍连打 8 下", "MVP：低音键模拟踩镲。", "Low E3 = hi-hat 'ci'.", "Low E3 = hi-hat sub."),
       [f1(_MI), p8([_MI, _MI, _MI, _MI, _MI, _MI, _MI, _MI], "踩镲 8 拍", 300)]),
   adv("1.5.3", "ch1", "★ 综合挑战 三曲", "★ 3-song combo",
       _i("丢手绢 + 宝贝 + 孤勇者 全部学过的音都用上 ⭐", "综合关：所有学过的元素。", "Three-song combo!", "Combo of all learned skills."),
-      [p8([SOL, MI, MI, FA, RE, RE], "丢手绢"),
-       p8([DO, RE, MI, FA, SOL, FA, MI, RE, DO], "宝贝"),
-       p8([SOL, FA, MI, RE, DO, RE, MI, FA, SOL], "孤勇者（片段）")], true, 35),
+      [p8([SOL, MI, MI, FA, RE, RE], "丢手绢（公版民谣）"),
+       p8([DO, RE, MI, FA, SOL, FA, MI, RE, DO], "上行下行综合句"),
+       p8([SOL, FA, MI, RE, DO, RE, MI, FA, SOL], "下行回归 综合句")], true, 35),
   adv("1.5.4", "ch1", "超级总结", "Chapter recap",
       _i("恭喜完成第一章！分享给家人朋友吧 🎉", "第一章总结。", "Chapter 1 done — share it!", "Chapter 1 recap."),
       [p8([DO, MI, SOL, DO_], "扬琴 do-mi-so-do")]),
@@ -3183,14 +3248,14 @@ const ADVANCED_LESSONS = [
       _i("把位 = 你左手的位置 🖐️ 不同位置弹不同区", "把位概念入门。", "Position = where your hand sits.", "Position basics."),
       [tap(3), f1(DO), f1(_DO), f1(DO_)]),
   adv("2.3.2", "ch2", "中高把位切换", "Mid→high shift",
-      _i("从 C4 滑到 C5，遇见 🌈", "中→高八度切换。", "Slide C4→C5: 遇见", "Mid → high shift."),
-      [p8([DO, MI, SOL, DO_, SOL, MI, DO], "遇见 上行下行")]),
+      _i("从 C4 滑到 C5 🌈", "中→高八度切换。", "Slide C4→C5", "Mid → high shift."),
+      [p8([DO, MI, SOL, DO_, SOL, MI, DO], "中 → 高 上下行")]),
   adv("2.3.3", "ch2", "中低把位切换", "Mid→low shift",
-      _i("从 C4 滑到 C3，你不知道的事", "中→低八度切换。", "Slide C4→C3", "Mid → low shift."),
-      [p8([DO, _SOL, _DO, _SOL, DO], "你不知道的事 把位")]),
-  adv("2.3.4", "ch2", "★ 遇见完整版", "★ Encounter full",
-      _i("把位综合：遇见整曲 ⭐", "把位综合。", "Encounter full song.", "Position boss."),
-      [p8([DO, MI, SOL, DO_, RE_, DO_, SOL, MI, DO], "遇见 完整片段")], true, 30),
+      _i("从 C4 滑到 C3", "中→低八度切换。", "Slide C4→C3", "Mid → low shift."),
+      [p8([DO, _SOL, _DO, _SOL, DO], "中 → 低 跨八度")]),
+  adv("2.3.4", "ch2", "★ 把位切换综合", "★ Position shift boss",
+      _i("把位综合：跨八度连接 ⭐", "把位综合。", "Cross-octave boss", "Position boss."),
+      [p8([DO, MI, SOL, DO_, RE_, DO_, SOL, MI, DO], "三把位连接")], true, 30),
 
   adv("2.4.1", "ch2", "向左扩指 7", "Stretch left to 7",
       _i("从 1 扩到 7（低音 Si），手张开一些 🤚", "扩指：1→7 是低 Si。", "Stretch from 1 to low 7", "1 stretch left to 7."),
@@ -3203,8 +3268,8 @@ const ADVANCED_LESSONS = [
       _i("小星星：1 1 5 5 6 6 5 ⭐", "向右扩到 La。", "Twinkle Twinkle stretch.", "Right stretch."),
       [p8([DO, DO, SOL, SOL, LA, LA, SOL], "小星星 1")]),
   adv("2.4.4", "ch2", "★ 扩指超级挑战", "★ Stretch boss",
-      _i("孤勇者片段 ⭐", "扩指综合。", "Boss: Lone Brave (片段)", "Stretch boss."),
-      [p8([SOL, FA, MI, RE, DO, _SI, _LA, _SI, DO], "孤勇者扩指片段")], true, 30),
+      _i("综合扩指上下行 ⭐", "扩指综合。", "Stretch combo!", "Stretch boss."),
+      [p8([SOL, FA, MI, RE, DO, _SI, _LA, _SI, DO], "扩指上下行综合")], true, 30),
 
   adv("2.5.1", "ch2", "雨的印记 1", "Kiss the Rain Pt.1",
       _i("第一段：5 1 2 2 3 3 → 1 2 3 2 5 5 ☔", "雨的印记 part 1。", "Kiss the Rain part 1", "Part 1."),
@@ -3232,60 +3297,66 @@ const ADVANCED_LESSONS = [
   /* ───── 第三章: 和弦弹奏与弹唱 ───── */
   adv("3.0.1", "ch3", "什么是和弦", "What is a chord",
       _i("和弦 = 同时弹 3 个音 🎹", "和弦：3+ 个音同时发声。", "Chord = play 3 notes together.", "Chord = simultaneous notes."),
-      [tap(3), f1(DO), f1(MI), f1(SOL)]),
+      [tap(3), f1(DO), f1(MI), f1(SOL),
+       { type: "T_CHORD_BLOCK", chord: [DO, MI, SOL], label: "试一下 C 和弦" }]),
   adv("3.1.1", "ch3", "什么是 C 和弦", "C chord",
       _i("C 和弦 = 1 + 3 + 5（红黄青）✨", "C 和弦 = C-E-G。", "C chord = Do-Mi-Sol", "C chord = C-E-G."),
-      [f1(DO), f1(MI), f1(SOL),
-       { type: "T1", target: DO }, { type: "T1", target: MI }, { type: "T1", target: SOL }]),
+      [{ type: "T_CHORD_ARP",   chord: [DO, MI, SOL], label: "C 分解练习" },
+       { type: "T_CHORD_BLOCK", chord: [DO, MI, SOL], label: "C 同时按下" },
+       { type: "T_CHORD_BLOCK", chord: [DO, MI, SOL], label: "C 再来一次" }]),
   adv("3.1.2", "ch3", "学会 F 和弦", "F chord",
       _i("F 和弦 = 4 + 6 + 1（绿蓝红）", "F 和弦 = F-A-C。", "F chord = Fa-La-Do", "F chord = F-A-C."),
-      [f1(FA), f1(LA), f1(DO_),
-       p8([FA, LA, DO_], "F 和弦分解", 400)]),
+      [{ type: "T_CHORD_ARP",   chord: [FA, LA, DO_], label: "F 分解" },
+       { type: "T_CHORD_BLOCK", chord: [FA, LA, DO_], label: "F 同时按下" }]),
   adv("3.1.3", "ch3", "C-F 切换", "C↔F switch",
       _i("两个和弦交替弹 🎶", "C ↔ F 切换练习。", "Switch C ↔ F", "Alternate C and F."),
-      [p8([DO, MI, SOL, FA, LA, DO_], "C → F 分解", 400),
-       p8([DO, MI, SOL, FA, LA, DO_, DO, MI, SOL], "C-F-C 循环", 350)]),
+      [{ type: "T_CHORD_PROG", progression: [[DO,MI,SOL],[FA,LA,DO_]], label: "C → F" },
+       { type: "T_CHORD_PROG", progression: [[DO,MI,SOL],[FA,LA,DO_],[DO,MI,SOL]], label: "C - F - C" }]),
   adv("3.1.4", "ch3", "★ 柱式和弦", "★ Block chords",
       _i("3 个音同时按下，叫柱式和弦 🏛️", "三音齐按。", "Block chord = all 3 at once.", "Block chord."),
-      [f1(DO), f1(MI), f1(SOL), p8([DO, MI, SOL, DO, MI, SOL], "柱式 C 反复", 600)], true, 25),
+      [{ type: "T_CHORD_BLOCK", chord: [DO, MI, SOL], label: "C 柱式" },
+       { type: "T_CHORD_BLOCK", chord: [FA, LA, DO_], label: "F 柱式" },
+       { type: "T_CHORD_PROG",  progression: [[DO,MI,SOL],[FA,LA,DO_],[DO,MI,SOL],[FA,LA,DO_]], label: "C-F 柱式循环" }], true, 30),
 
   adv("3.2.1", "ch3", "学会 G 和弦", "G chord",
       _i("G 和弦 = 5 + 7 + 2（青紫橙）", "G 和弦 = G-B-D。", "G chord = Sol-Si-Re", "G chord = G-B-D."),
-      [f1(SOL), f1(SI), f1(RE_),
-       p8([SOL, SI, RE_], "G 分解", 400)]),
+      [{ type: "T_CHORD_ARP",   chord: [SOL, SI, RE_], label: "G 分解" },
+       { type: "T_CHORD_BLOCK", chord: [SOL, SI, RE_], label: "G 柱式" }]),
   adv("3.2.2", "ch3", "学会 Am 和弦", "Am chord",
       _i("Am 和弦 = 6 + 1 + 3（蓝红黄）", "Am 和弦 = A-C-E。", "Am chord = La-Do-Mi", "Am chord = A-C-E."),
-      [f1(LA), f1(DO_), f1(MI_),
-       p8([LA, DO_, MI_], "Am 分解", 400)]),
+      [{ type: "T_CHORD_ARP",   chord: [LA, DO_, MI_], label: "Am 分解" },
+       { type: "T_CHORD_BLOCK", chord: [LA, DO_, MI_], label: "Am 柱式" }]),
 
   adv("3.3.1", "ch3", "什么是和弦走向", "Chord progressions",
       _i("和弦走向 = 几个和弦按顺序循环 🌀", "和弦走向：周期性和弦序列。", "Progression = chord cycle.", "Progression = chord sequence."),
-      [tap(4)]),
+      [tap(4),
+       { type: "T_CHORD_PROG", progression: [[DO,MI,SOL],[FA,LA,DO_]], label: "最简单的走向 C-F" }]),
   adv("3.3.2", "ch3", "1645 走向", "1-6-4-5 progression",
-      _i("C → Am → F → G 循环 🎵 春天里 / 传奇", "1645 = C-Am-F-G。", "1645 = C-Am-F-G", "1645 progression."),
-      [p8([DO, LA, FA, SOL], "根音 1-6-4-5", 800),
-       p8([DO, MI, LA, DO_, FA, LA, SOL, SI], "1645 分解", 400)]),
+      _i("C → Am → F → G 循环 🎵", "经典流行 1645 走向。", "1645 = C-Am-F-G", "1645 progression."),
+      [{ type: "T_CHORD_PROG", progression: [[DO,MI,SOL],[LA,DO_,MI_],[FA,LA,DO_],[SOL,SI,RE_]], label: "1-6-4-5 柱式" },
+       { type: "T_CHORD_PROG", progression: [[DO,MI,SOL],[LA,DO_,MI_],[FA,LA,DO_],[SOL,SI,RE_],[DO,MI,SOL]], label: "1645 + 回归 1" }]),
   adv("3.3.3", "ch3", "★ 6415 走向", "★ 6-4-1-5 progression",
-      _i("Am → F → C → G ⭐ 杀破狼 / 听海", "6415 = Am-F-C-G。", "6415 = Am-F-C-G", "6415 progression."),
-      [p8([LA, FA, DO, SOL], "根音 6-4-1-5", 800),
-       p8([LA, DO_, FA, LA, DO, MI, SOL, SI], "6415 分解", 400)], true, 30),
+      _i("Am → F → C → G ⭐", "经典抒情 6415 走向。", "6415 = Am-F-C-G", "6415 progression."),
+      [{ type: "T_CHORD_PROG", progression: [[LA,DO_,MI_],[FA,LA,DO_],[DO,MI,SOL],[SOL,SI,RE_]], label: "6-4-1-5 柱式" }], true, 30),
 
   adv("3.4.1", "ch3", "学会 Dm 和弦", "Dm chord",
       _i("Dm 和弦 = 2 + 4 + 6（橙绿蓝）", "Dm = D-F-A。", "Dm = Re-Fa-La", "Dm = D-F-A."),
-      [f1(RE), f1(FA), f1(LA), p8([RE, FA, LA], "Dm 分解", 400)]),
+      [{ type: "T_CHORD_ARP",   chord: [RE, FA, LA], label: "Dm 分解" },
+       { type: "T_CHORD_BLOCK", chord: [RE, FA, LA], label: "Dm 柱式" }]),
   adv("3.4.2", "ch3", "学会 Em 和弦", "Em chord",
       _i("Em 和弦 = 3 + 5 + 7（黄青紫）", "Em = E-G-B。", "Em = Mi-Sol-Si", "Em = E-G-B."),
-      [f1(MI), f1(SOL), f1(SI), p8([MI, SOL, SI], "Em 分解", 400)]),
+      [{ type: "T_CHORD_ARP",   chord: [MI, SOL, SI], label: "Em 分解" },
+       { type: "T_CHORD_BLOCK", chord: [MI, SOL, SI], label: "Em 柱式" }]),
 
   adv("3.5.1", "ch3", "4536251 走向", "4-5-3-6-2-5-1",
-      _i("F-G-Em-Am-Dm-G-C 七和弦走向 ✨ 需要人陪", "经典 j-pop 走向。", "F-G-Em-Am-Dm-G-C", "Classic J-pop progression."),
-      [p8([FA, SOL, MI, LA, RE, SOL, DO], "4536251 根音", 700)]),
+      _i("F-G-Em-Am-Dm-G-C 七和弦走向 ✨", "经典 J-pop 走向。", "F-G-Em-Am-Dm-G-C", "Classic J-pop progression."),
+      [{ type: "T_CHORD_PROG", progression: [[FA,LA,DO_],[SOL,SI,RE_],[MI,SOL,SI],[LA,DO_,MI_],[RE,FA,LA],[SOL,SI,RE_],[DO,MI,SOL]], label: "4536251 柱式" }]),
   adv("3.5.2", "ch3", "15634125 走向", "1-5-6-3-4-1-2-5",
-      _i("C-G-Am-Em-F-C-Dm-G ✨ 寂寞沙洲冷", "经典抒情走向。", "C-G-Am-Em-F-C-Dm-G", "Ballad progression."),
-      [p8([DO, SOL, LA, MI, FA, DO, RE, SOL], "15634125 根音", 700)]),
-  adv("3.5.3", "ch3", "★ 综合超级挑战 遇见", "★ Encounter combo",
-      _i("用所有和弦弹遇见 ⭐", "综合考核。", "Boss: Encounter (combo)", "Combo boss."),
-      [p8([DO, MI, SOL, DO_, LA, DO_, MI_, RE_, SOL, SI, RE_, FA, LA, DO_], "遇见 和弦伴奏")], true, 40),
+      _i("C-G-Am-Em-F-C-Dm-G ✨", "经典抒情走向。", "C-G-Am-Em-F-C-Dm-G", "Ballad progression."),
+      [{ type: "T_CHORD_PROG", progression: [[DO,MI,SOL],[SOL,SI,RE_],[LA,DO_,MI_],[MI,SOL,SI],[FA,LA,DO_],[DO,MI,SOL],[RE,FA,LA],[SOL,SI,RE_]], label: "15634125 柱式" }]),
+  adv("3.5.3", "ch3", "★ 和弦综合超级挑战", "★ Chord combo boss",
+      _i("用所有和弦弹一段抒情伴奏 ⭐", "六和弦综合考核。", "All chords combo!", "Combo boss."),
+      [{ type: "T_CHORD_PROG", progression: [[DO,MI,SOL],[LA,DO_,MI_],[FA,LA,DO_],[SOL,SI,RE_],[DO,MI,SOL],[LA,DO_,MI_],[FA,LA,DO_],[SOL,SI,RE_]], label: "1645 × 2 综合伴奏" }], true, 40),
   adv("3.5.4", "ch3", "课程总结", "Chapter recap",
       _i("和弦章节完成！🎊", "第三章总结。", "Chord chapter done!", "Chapter 3 recap."),
       [p8([DO, MI, SOL, DO_], "1-3-5-1 总结")]),
@@ -3303,32 +3374,32 @@ const ADVANCED_LESSONS = [
   adv("4.1.4", "ch4", "双手同时", "Hands together",
       _i("左右手同时落键 💪 人间合奏", "同步双手。", "Hands together!", "Both at once."),
       [p8([_DO, DO, _FA, FA, _SOL, SOL], "人间 同步", 600)]),
-  adv("4.1.5", "ch4", "★ 你不知道的事", "★ Sth you don't know",
-      _i("综合双手 ⭐ 你不知道的事", "双手综合。", "Sth you don't know", "Two-hand boss."),
-      [p8([_DO, MI, SOL, _LA, MI, LA, _FA, DO_, LA, _SOL, SI, RE_], "你不知道的事 双手")], true, 35),
+  adv("4.1.5", "ch4", "★ 1645 双手综合", "★ 1-6-4-5 two-hand boss",
+      _i("综合双手 1645 走向 ⭐", "双手综合 1645。", "Two-hand 1-6-4-5 combo", "Two-hand boss."),
+      [p8([_DO, MI, SOL, _LA, MI, LA, _FA, DO_, LA, _SOL, SI, RE_], "1645 双手综合句")], true, 35),
 
-  adv("4.2.1", "ch4", "变化弹法 1 闷", "Variation 1: 闷",
-      _i("和弦音错开 + 闷音节奏 🎸", "Variation 1。", "Variation 1: 闷", "Var 1."),
-      [p8([_DO, MI, _SOL, SI, _LA, DO_, _FA, LA], "闷 节奏", 350)]),
-  adv("4.2.2", "ch4", "变化弹法 2 理想三旬", "Variation 2",
-      _i("分解 + 二声部 ✨ 理想三旬", "Variation 2。", "Variation 2", "Var 2."),
-      [p8([_DO, MI, SOL, MI, _FA, LA, DO_, LA], "理想三旬 分解", 400)]),
-  adv("4.2.3", "ch4", "变化弹法 3 月亮代表我的心", "Variation 3",
-      _i("月亮代表我的心 🌙 经典", "Variation 3。", "Variation 3: Moon", "Var 3."),
-      [p8([MI, MI, MI, SOL, MI, RE, DO, RE, MI, RE], "月亮代表我的心", 400)]),
-  adv("4.2.4", "ch4", "★ 好久不见", "★ Long time no see",
-      _i("双手综合挑战 ⭐ 好久不见", "双手综合。", "Long time no see", "Two-hand boss."),
-      [p8([_LA, MI, LA, _DO, SOL, DO_, _FA, LA, DO_, _SOL, SI, RE_], "好久不见")], true, 35),
+  adv("4.2.1", "ch4", "变化弹法 1 · 闷音", "Variation 1: muted",
+      _i("和弦音错开 + 闷音节奏 🎸", "Variation 1：闷音节奏。", "Var 1: muted rhythm", "Var 1."),
+      [p8([_DO, MI, _SOL, SI, _LA, DO_, _FA, LA], "闷音节奏型练习", 350)]),
+  adv("4.2.2", "ch4", "变化弹法 2 · 分解", "Variation 2: arpeggio",
+      _i("分解 + 二声部 ✨", "Variation 2：分解二声部。", "Var 2: arpeggio + 2 voice", "Var 2."),
+      [p8([_DO, MI, SOL, MI, _FA, LA, DO_, LA], "分解二声部练习", 400)]),
+  adv("4.2.3", "ch4", "变化弹法 3 · 月亮代表我的心", "Variation 3: Moon (PD)",
+      _i("月亮代表我的心 🌙 经典公版旋律", "Variation 3：经典抒情。", "Var 3: classic ballad", "Var 3."),
+      [p8([MI, MI, MI, SOL, MI, RE, DO, RE, MI, RE], "月亮代表我的心 主题")]),
+  adv("4.2.4", "ch4", "★ 双手综合 6415", "★ 6-4-1-5 two-hand boss",
+      _i("双手综合挑战 ⭐ 6415 走向", "双手 6415 综合。", "Two-hand 6415 combo", "Two-hand boss."),
+      [p8([_LA, MI, LA, _DO, SOL, DO_, _FA, LA, DO_, _SOL, SI, RE_], "6415 双手综合长句")], true, 35),
 
-  adv("4.3.1", "ch4", "6415 综合 杀破狼", "6415 combo",
-      _i("Am-F-C-G + 旋律 ⭐ 杀破狼", "6415 with melody。", "6415 + melody", "6415 combo."),
-      [p8([_LA, MI, _FA, DO_, _DO, SOL, _SOL, SI], "杀破狼 6415", 400)]),
-  adv("4.3.2", "ch4", "456 综合 孤勇者", "456 combo",
-      _i("F-G-Am 顺阶 + 旋律 ⭐ 孤勇者", "456 顺阶。", "456 + melody", "456 combo."),
-      [p8([_FA, LA, _SOL, SI, _LA, DO_, _LA, MI_], "孤勇者 456", 400)]),
-  adv("4.3.3", "ch4", "4536251 综合 说谎", "4536251 combo",
-      _i("超长和弦走向 + 旋律 ⭐ 说谎", "4536251 with melody。", "4536251 + melody", "Long progression."),
-      [p8([_FA, LA, _SOL, SI, _MI, SOL, _LA, DO_, _RE, FA, _SOL, SI, _DO, MI], "说谎 综合", 400)]),
+  adv("4.3.1", "ch4", "6415 双手综合", "6415 two-hand combo",
+      _i("Am-F-C-G + 旋律 ⭐", "6415 with melody。", "6415 + melody", "6415 combo."),
+      [p8([_LA, MI, _FA, DO_, _DO, SOL, _SOL, SI], "6415 左手低音 + 右手旋律", 400)]),
+  adv("4.3.2", "ch4", "456 双手综合", "456 two-hand combo",
+      _i("F-G-Am 顺阶 + 旋律 ⭐", "456 顺阶。", "456 + melody", "456 combo."),
+      [p8([_FA, LA, _SOL, SI, _LA, DO_, _LA, MI_], "456 顺阶双手", 400)]),
+  adv("4.3.3", "ch4", "4536251 双手综合", "4536251 two-hand combo",
+      _i("超长和弦走向 + 旋律 ⭐", "4536251 with melody。", "4536251 + melody", "Long progression."),
+      [p8([_FA, LA, _SOL, SI, _MI, SOL, _LA, DO_, _RE, FA, _SOL, SI, _DO, MI], "4536251 长走向", 400)]),
 
   adv("4.4.1", "ch4", "雨的印记 第一段 双手", "Kiss the Rain 1 (2H)",
       _i("现在用双手版重弹第一段 🤝☔", "Two-hand part 1。", "Two-hand part 1", "Two-hand part 1."),
@@ -3551,26 +3622,26 @@ const EXAM_LESSONS_RAW = [
 
   /* ─── Level 3 · 音阶森林 ─── */
   ex("3.1","L3","C 大调音阶","C major scale",
-    "8 个白键全速通过 🌲","All 8 whites in C major.",
-    [stf([60,62,64,65,67,69,71,72], "C 大调上行"),
-     stf([72,71,69,67,65,64,62,60], "C 大调下行")]),
+    "8 个白键全速通过 · 标准指法 1-2-3-1-2-3-4-5 🌲","All 8 whites in C major. Std fingering 1-2-3-1-2-3-4-5.",
+    [{...stf([60,62,64,65,67,69,71,72], "C 大调上行"), fingerings:[1,2,3,1,2,3,4,5]},
+     {...stf([72,71,69,67,65,64,62,60], "C 大调下行"), fingerings:[5,4,3,2,1,3,2,1]}]),
   ex("3.2","L3","G 大调入门","G major (1 sharp)",
-    "G 大调有一个升号 #F","G major has F#.",
-    [stf([67,69,71,72,74,76,78,79], "G 大调上行"),
+    "G 大调有一个升号 #F · 指法同 C 大调","G major has F#.",
+    [{...stf([67,69,71,72,74,76,78,79], "G 大调上行"), fingerings:[1,2,3,1,2,3,4,5]},
      {type:"T3",target:78,choices:["F","F#","G","G#"]}]),
   ex("3.3","L3","F 大调入门","F major (1 flat)",
-    "F 大调有一个降号 ♭B","F major has Bb.",
-    [stf([65,67,69,70,72,74,76,77], "F 大调上行"),
+    "F 大调有一个降号 ♭B · 指法 1-2-3-4-1-2-3-4","F major has Bb.",
+    [{...stf([65,67,69,70,72,74,76,77], "F 大调上行"), fingerings:[1,2,3,4,1,2,3,4]},
      {type:"T3",target:70,choices:["A","A#","B","Bb"]}]),
   ex("3.4","L3","a 小调","A minor",
     "C 大调的关系小调 🌑","Relative minor of C major.",
-    [stf([57,59,60,62,64,65,67,69], "a 自然小调"),
+    [{...stf([57,59,60,62,64,65,67,69], "a 自然小调"), fingerings:[5,4,3,2,1,3,2,1]},
      {type:"T3",target:60,choices:["C major","A minor","G major","F major"]}]),
   ex("3.5","L3","简单琶音","Basic arpeggios",
-    "C-F-G 三和弦琶音 🎶","C-F-G chord arpeggios.",
-    [stf([60,64,67,72], "C 琶音"),
-     stf([65,69,72,77], "F 琶音"),
-     stf([67,71,74,79], "G 琶音")]),
+    "C-F-G 三和弦琶音 · 指法 1-2-3-5 🎶","C-F-G chord arpeggios.",
+    [{...stf([60,64,67,72], "C 琶音"), fingerings:[1,2,3,5]},
+     {...stf([65,69,72,77], "F 琶音"), fingerings:[1,2,3,5]},
+     {...stf([67,71,74,79], "G 琶音"), fingerings:[1,2,3,5]}]),
   ex("3.6","L3","★ Czerny Op.599","★ Czerny etude",
     "Boss：Czerny 第一首练习曲 ⭐","Boss: Czerny Op.599 No.1.",
     [stf(MEL.czerny599, "Czerny 上行片段"),
@@ -4115,6 +4186,9 @@ function renderQuestion() {
   else if (q.type === "T_STAFF") renderT_STAFF(slot, q);
   else if (q.type === "T_PREVIEW") renderT_PREVIEW(slot, q);
   else if (q.type === "T_RHYTHM") renderT_RHYTHM(slot, q);
+  else if (q.type === "T_CHORD_BLOCK") renderT_CHORD_BLOCK(slot, q);
+  else if (q.type === "T_CHORD_ARP")   renderT_CHORD_ARP(slot, q);
+  else if (q.type === "T_CHORD_PROG")  renderT_CHORD_PROG(slot, q);
 }
 
 function questionCard(title, prompt, tip) {
@@ -4448,6 +4522,160 @@ function renderT8(slot, q) {
    should play is highlighted green on the staff AND lit on the
    keyboard via LED. Wrong key → red flash on staff & keyboard.
    On correct key, advance to next note. */
+/* ---------- T_CHORD_BLOCK: press all chord notes simultaneously ----------
+   Lights up all chord notes at once (target green), waits for user to
+   press all of them within a 220ms window. Stray notes outside the
+   chord are IGNORED (not flagged as wrong) — the chord is what matters. */
+function renderT_CHORD_BLOCK(slot, q) {
+  const chord = q.chord || [];
+  const tip = q.tip ? (typeof q.tip === "string" ? q.tip : q.tip[state.lang] || q.tip.zh) : null;
+  const card = questionCard(
+    state.lang === "zh" ? "柱式和弦 · 同时按下三个音" : "Block chord · press all notes together",
+    q.label || (chord.map(n => noteShort(n)).join(" + ")),
+    tip);
+  slot.appendChild(card);
+  // Show staff with chord stack
+  const staffWrap = document.createElement("div");
+  staffWrap.className = "staff-container";
+  card.querySelector(".q-body").appendChild(staffWrap);
+  renderStaff(staffWrap, [{ chord: chord, dur: "h" }], { grand: !!q.grand });
+  // Show vertical chord pills (1-3-5 stacked)
+  const stack = document.createElement("div");
+  stack.className = "chord-stack";
+  chord.slice().reverse().forEach(n => {
+    const pill = document.createElement("div");
+    pill.className = "chord-pill";
+    pill.textContent = noteShort(n);
+    stack.appendChild(pill);
+  });
+  card.querySelector(".q-body").appendChild(stack);
+  // Keyboard
+  const kbWrap = document.createElement("div");
+  buildKeyboard(kbWrap, PK_LOW, PK_HIGH);
+  card.querySelector(".q-body").appendChild(kbWrap);
+  // Light all chord notes
+  chord.forEach(n => led(n, "target"));
+
+  const chordSet = new Set(chord);
+  let pressed = new Set();
+  let pressTimer = null;
+  let attempts = 0;
+  onMidiNote = (note, vel, isOn) => {
+    if (!isOn) return;
+    if (!chordSet.has(note)) {
+      // Outside the chord — ignore (no penalty). Brief feedback flash only.
+      flashKey(note, true); setTimeout(() => flashKey(note, false), 120);
+      return;
+    }
+    pressed.add(note);
+    // Mark this note as struck on screen
+    led(note, "target");
+    // Window: collect all chord notes within 220ms of first press
+    if (!pressTimer) {
+      pressTimer = setTimeout(() => {
+        if (pressed.size >= chord.length) {
+          onMidiNote = null;
+          chord.forEach(n => ledOff(n));
+          onCorrect();
+        } else {
+          attempts++;
+          pressed = new Set();
+          pressTimer = null;
+          if (state.tone === "kid" && attempts >= 3) {
+            // demo & continue
+            chord.forEach(n => { led(n, "target"); playNote(n, 0.8); });
+            setTimeout(() => { chord.forEach(n => ledOff(n)); onCorrect(); }, 1500);
+          }
+        }
+      }, 220);
+    }
+  };
+}
+
+/* ---------- T_CHORD_ARP: press chord notes one at a time, in order ---------- */
+function renderT_CHORD_ARP(slot, q) {
+  const chord = q.chord || [];
+  const card = questionCard(
+    state.lang === "zh" ? "分解和弦 · 依次弹响" : "Arpeggio · play in sequence",
+    q.label || (chord.map(n => noteShort(n)).join(" → ")));
+  slot.appendChild(card);
+  const staffWrap = document.createElement("div");
+  staffWrap.className = "staff-container";
+  card.querySelector(".q-body").appendChild(staffWrap);
+  renderStaff(staffWrap, chord, { grand: !!q.grand });
+  const kbWrap = document.createElement("div");
+  buildKeyboard(kbWrap, PK_LOW, PK_HIGH);
+  card.querySelector(".q-body").appendChild(kbWrap);
+  let idx = 0;
+  const chordSet = new Set(chord);
+  function lightNext() {
+    if (idx >= chord.length) return;
+    chord.forEach((n, i) => i === idx ? led(n, "target") : ledOff(n));
+  }
+  lightNext();
+  onMidiNote = (note, vel, isOn) => {
+    if (!isOn) return;
+    // Ignore non-chord notes (chord-only judgment)
+    if (!chordSet.has(note)) {
+      flashKey(note, true); setTimeout(() => flashKey(note, false), 120);
+      return;
+    }
+    if (note === chord[idx]) {
+      ledOff(note);
+      idx++;
+      if (idx >= chord.length) { onMidiNote = null; onCorrect(); }
+      else lightNext();
+    }
+    // Wrong order within the chord: ignore (no harsh penalty)
+  };
+}
+
+/* ---------- T_CHORD_PROG: chord progression (sequence of chords) ---------- */
+function renderT_CHORD_PROG(slot, q) {
+  const prog = q.progression || [];   // array of chord arrays, e.g. [[60,64,67],[57,60,64]]
+  const card = questionCard(
+    state.lang === "zh" ? "和弦走向" : "Chord progression",
+    q.label || prog.map(c => noteShort(c[0])).join(" → "));
+  slot.appendChild(card);
+  // Render staff with each chord as a vertical stack
+  const staffWrap = document.createElement("div");
+  staffWrap.className = "staff-container";
+  card.querySelector(".q-body").appendChild(staffWrap);
+  renderStaff(staffWrap, prog.map(c => ({ chord: c, dur: "h" })), { grand: !!q.grand });
+  const kbWrap = document.createElement("div");
+  buildKeyboard(kbWrap, PK_LOW, PK_HIGH);
+  card.querySelector(".q-body").appendChild(kbWrap);
+  let chordIdx = 0;
+  function lightCurrentChord() {
+    ledClearAll();
+    if (chordIdx < prog.length) prog[chordIdx].forEach(n => led(n, "target"));
+  }
+  lightCurrentChord();
+  let pressed = new Set();
+  let pressTimer = null;
+  onMidiNote = (note, vel, isOn) => {
+    if (!isOn || chordIdx >= prog.length) return;
+    const expected = new Set(prog[chordIdx]);
+    if (!expected.has(note)) { flashKey(note, true); setTimeout(() => flashKey(note, false), 120); return; }
+    pressed.add(note);
+    led(note, "target");
+    if (!pressTimer) {
+      pressTimer = setTimeout(() => {
+        if (pressed.size >= prog[chordIdx].length) {
+          chordIdx++;
+          pressed = new Set();
+          pressTimer = null;
+          if (chordIdx >= prog.length) { onMidiNote = null; onCorrect(); }
+          else { lightCurrentChord(); }
+        } else {
+          pressed = new Set();
+          pressTimer = null;
+        }
+      }, 260);
+    }
+  };
+}
+
 /* ---------- T_PREVIEW: auto-play melody on staff (Boss flow phase 1) ---------- */
 function renderT_PREVIEW(slot, q) {
   const card = questionCard(
@@ -4458,22 +4686,25 @@ function renderT_PREVIEW(slot, q) {
   const staffWrap = document.createElement("div");
   staffWrap.className = "staff-container";
   card.querySelector(".q-body").appendChild(staffWrap);
-  const staff = renderStaff(staffWrap, q.sequence, { grand: !!q.grand });
-  // Auto-play melody once with staff highlight + audio
-  const len = q.sequence.length;
-  const gap = 480;
+  const staff = renderStaff(staffWrap, q.sequence, { grand: !!q.grand, fingerings: q.fingerings });
+  // Auto-play melody once with REAL note durations (whole/half/quarter/8/16)
   let played = false;
   function playOnce() {
     if (played) return; played = true;
+    let cumMs = 0;
     q.sequence.forEach((s, i) => {
       const m = (typeof s === "object") ? s.midi : s;
+      const dur = (typeof s === "object" && s.dur) ? s.dur : "q";
+      const audioSec = durToAudioSec(dur);
+      const gapMs = audioSec * 1000 * 0.88;
       setTimeout(() => {
-        playNote(m, 0.4);
+        playNote(m, audioSec * 0.95);
         staff.highlight(i, "#58CC02");
-        setTimeout(() => staff.highlight(i, "#7d8794"), 360);
-      }, i * gap);
+        setTimeout(() => staff.highlight(i, "#7d8794"), audioSec * 1000 * 0.9);
+      }, cumMs);
+      cumMs += gapMs;
     });
-    setTimeout(() => onCorrect(), len * gap + 700);
+    setTimeout(() => onCorrect(), cumMs + 700);
   }
   setTimeout(playOnce, 800);
   // Allow MIDI press to also continue if user is impatient
@@ -4549,7 +4780,7 @@ function renderT_STAFF(slot, q) {
   if (q.grand) kbWrap.querySelector(".keyboard").classList.add("two-hand");
   card.querySelector(".q-body").appendChild(kbWrap);
 
-  const staff = renderStaff(staffWrap, q.sequence, { grand: !!q.grand });
+  const staff = renderStaff(staffWrap, q.sequence, { grand: !!q.grand, fingerings: q.fingerings });
   let idx = 0, errors = 0;
 
   function highlightCurrent() {
