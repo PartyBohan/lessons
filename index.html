@@ -1665,6 +1665,13 @@
     <button class="toggle-btn" id="lang-zh">中</button>
     <button class="toggle-btn" id="lang-en">EN</button>
   </div>
+  <button class="bgm-btn" id="tts-toggle" title="Read aloud" aria-label="Text-to-speech toggle">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 10v4a1 1 0 0 0 1 1h3l5 4V5L7 9H4a1 1 0 0 0-1 1z"/>
+      <path d="M16 9a4 4 0 0 1 0 6"/>
+      <path d="M19 6a8 8 0 0 1 0 12"/>
+    </svg>
+  </button>
   <button class="bgm-btn" id="bgm-toggle" title="Background music" aria-label="Toggle background music">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
       <path d="M9 18V5l12-2v13"/>
@@ -1813,6 +1820,8 @@ const DEFAULT_STATE = {
   keyLabel: "auto", // "auto" | "western" | "jianpu" | "solfege"
   // Has user seen the posture / stretch tutorials? Tracks one-shot animations.
   seenAnim: { posture: false, stretch: false },
+  // Text-to-speech: read question titles aloud via Web Speech API
+  tts: false,
   // Multi-pack support: progress is per-pack. Each pack has its own
   // stars-by-lesson dict and its own "unlocked up to" pointer.
   activePack: "basic",
@@ -2361,9 +2370,11 @@ function handleMidiMessage(event) {
   if (cmd === 0x90 && velocity > 0) {
     // Audible response — same as virtual on-screen press.
     const gain = 0.08 + (velocity / 127) * 0.18;
-    playNote(note, 0.7, gain);
+    // Drum-mode lesson: low keys play percussion instead of piano
+    const drumT = isDrumLesson() && midiToDrumType(note);
+    if (drumT) playDrum(drumT, gain * 1.4);
+    else       playNote(note, 0.7, gain);
     flashKey(note, true);
-    // Try shortcut FIRST (won't trigger during active question)
     if (tryShortcutNext(note)) return;
     if (onMidiNote) onMidiNote(note, velocity, true);
   } else if (cmd === 0x80 || (cmd === 0x90 && velocity === 0)) {
@@ -2497,6 +2508,71 @@ function durToAudioSec(d) {
 function dingCorrect() { playNote(72, 0.15, 0.08); setTimeout(() => playNote(76, 0.18, 0.1), 80); }
 function buzzWrong()   { playNote(53, 0.18, 0.06); setTimeout(() => playNote(50, 0.22, 0.06), 80); }
 
+/* ── Percussion synth (kick / snare / hat) ──────────────────────
+   Used by drum-mode lessons (advanced 1.3.3, 1.3.4, 1.5.2, 1.5.3)
+   so when the user hits low keys it sounds like a kit, not piano.
+   Also used by T_RHYTHM metronome — proper hi-hat click. */
+function playDrum(type, gain) {
+  const ctx = ensureAudio(); if (!ctx) return;
+  gain = gain || 0.28;
+  const t0 = ctx.currentTime;
+  const out = ctx.createGain();
+  out.connect(ctx.destination);
+  out.gain.setValueAtTime(0, t0);
+  out.gain.linearRampToValueAtTime(gain, t0 + 0.004);
+  if (type === "kick" || type === "动") {
+    const o = ctx.createOscillator();
+    o.type = "sine";
+    o.frequency.setValueAtTime(160, t0);
+    o.frequency.exponentialRampToValueAtTime(45, t0 + 0.13);
+    o.connect(out);
+    o.start(t0); o.stop(t0 + 0.25);
+    out.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.22);
+  } else if (type === "snare" || type === "大") {
+    // tone + noise burst
+    const o = ctx.createOscillator();
+    o.type = "triangle";
+    o.frequency.value = 220;
+    const og = ctx.createGain(); og.gain.value = 0.4;
+    o.connect(og).connect(out);
+    o.start(t0); o.stop(t0 + 0.12);
+    const buf = ctx.createBuffer(1, ctx.sampleRate * 0.18, ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < data.length; i++) data[i] = (Math.random()*2-1) * Math.pow(1 - i/data.length, 2);
+    const noise = ctx.createBufferSource(); noise.buffer = buf;
+    const bp = ctx.createBiquadFilter(); bp.type="bandpass"; bp.frequency.value=2200; bp.Q.value=0.6;
+    const ng = ctx.createGain(); ng.gain.value = 0.7;
+    noise.connect(bp).connect(ng).connect(out);
+    noise.start(t0);
+    out.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.18);
+  } else if (type === "hat" || type === "次" || type === "踩镲") {
+    // very short high-pass noise = hi-hat tick
+    const buf = ctx.createBuffer(1, ctx.sampleRate * 0.06, ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < data.length; i++) data[i] = (Math.random()*2-1) * Math.pow(1 - i/data.length, 4);
+    const noise = ctx.createBufferSource(); noise.buffer = buf;
+    const hp = ctx.createBiquadFilter(); hp.type="highpass"; hp.frequency.value=8000;
+    noise.connect(hp).connect(out);
+    noise.start(t0);
+    out.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.06);
+  }
+}
+
+// Lessons where low keys should sound like drums instead of piano.
+const DRUM_LESSON_IDS = new Set(["1.3.3","1.3.4","1.5.2","1.5.3"]); // advanced pack
+
+// In drum lessons, map low MIDI notes to percussion samples.
+// Used by handleMidiMessage to override piano output for the kit notes.
+function isDrumLesson() {
+  return session && session.lesson && DRUM_LESSON_IDS.has(session.lesson.id);
+}
+function midiToDrumType(note) {
+  if (note <= 49) return "kick";    // C3 / C#3 → 动
+  if (note <= 51) return "snare";   // D3 / D#3 → 大
+  if (note <= 54) return "hat";     // E3 / F3  → 次
+  return null;
+}
+
 /* ============================================================
    4b) BACKGROUND MUSIC — soft procedural pad loop, ~0.04 master
         4-chord progression I-vi-IV-V (C / Am / F / G), 8s per
@@ -2608,6 +2684,34 @@ function toggleBgm() {
 function refreshBgmBtn() {
   const btn = document.getElementById("bgm-toggle");
   if (btn) btn.classList.toggle("on", !!state.bgm);
+}
+
+/* ── Text-to-speech (Web Speech API) ────────────────────────────
+   Optional voice readout of question titles. Free, runs entirely in
+   the browser. Quality varies by OS but works on every modern browser. */
+function speak(text) {
+  if (!state.tts || !text) return;
+  if (!window.speechSynthesis) return;
+  try {
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(String(text).replace(/<[^>]+>/g, ""));
+    u.lang = state.lang === "zh" ? "zh-CN" : "en-US";
+    u.rate = 1.05;
+    u.pitch = 1.05;
+    u.volume = 0.85;
+    speechSynthesis.speak(u);
+  } catch (e) {}
+}
+function toggleTts() {
+  state.tts = !state.tts;
+  saveState();
+  refreshTtsBtn();
+  if (state.tts) speak(state.lang === "zh" ? "语音播报已打开" : "Voice readout on");
+  else if (window.speechSynthesis) speechSynthesis.cancel();
+}
+function refreshTtsBtn() {
+  const btn = document.getElementById("tts-toggle");
+  if (btn) btn.classList.toggle("on", !!state.tts);
 }
 
 /* ============================================================
@@ -4200,6 +4304,12 @@ function questionCard(title, prompt, tip) {
     ${tip ? `<div class="q-tip">${tip}</div>` : ""}
     <div class="q-body"></div>
   `;
+  // Optional TTS readout of the title (speaks once per question card).
+  // No-op if state.tts is off or browser lacks SpeechSynthesis.
+  if (state.tts) {
+    // Tiny delay so audio context is awake & UI has rendered first
+    setTimeout(() => speak(title + (tip ? "。" + (typeof tip === "string" ? tip : "") : "")), 200);
+  }
   return card;
 }
 
@@ -4739,7 +4849,7 @@ function renderT_RHYTHM(slot, q) {
       return;
     }
     Array.from(beats.children).forEach((d, i) => d.classList.toggle("now", i === beatIdx));
-    playNote(84, 0.04, 0.06); // metronome click (high E5)
+    playDrum("hat", 0.16);   // proper hi-hat click instead of piano
     beatIdx++;
   }
   // 70 BPM click
@@ -5032,6 +5142,8 @@ function bindUI() {
   if (gm) { gm.style.width = "180px"; gm.style.height = "180px"; }
   const bgmBtn = document.getElementById("bgm-toggle");
   if (bgmBtn) bgmBtn.onclick = toggleBgm;
+  const ttsBtn = document.getElementById("tts-toggle");
+  if (ttsBtn) ttsBtn.onclick = toggleTts;
   // Pack tabs
   document.querySelectorAll(".pack-tab").forEach(tab => {
     tab.onclick = () => setActivePack(tab.dataset.pack);
@@ -5050,6 +5162,7 @@ function init() {
   bindUI();
   refreshToggles();
   refreshBgmBtn();
+  refreshTtsBtn();
   refreshPackTabs();
   applyI18n();
   refreshTopbar();
